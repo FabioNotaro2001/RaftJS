@@ -3,12 +3,16 @@
   "version": "1.0.0",
   "description": "Raft implementation",
   "main": "index.js",
+  "type":"module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "raft"
   ],
-  "author": "andreaBedei, GiacomoBertuccili, Fabio\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[Do\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[CNotaro\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[D\u001b[C\u001b[C\u001b[C\u001b[C\u001b[Cl\u001b[2~i, FabioNotaro\u001b[D\u001b[D\u001b[D\u001b[C\u001b[C\u001b[C",
-  "license": "ISC"
+  "author": "Andrea, Giacomo, Fabio",
+  "license": "ISC",
+  "dependencies": {
+    "socket.io": "^4.7.2"
+  }
 }

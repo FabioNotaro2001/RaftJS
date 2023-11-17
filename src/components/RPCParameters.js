@@ -1,15 +1,17 @@
-import { Log } from "./Log";
+import { LogRecord } from "./Log";
 
 class RPCParameters {
     /**
      * 
+     * @param {String} senderId 
      * @param {Number} term 
      * @param {Boolean} isResponse 
      */
-    constructor(term, isResponse) {
+    constructor(senderId, term, isResponse) {
         if(this.constructor == RPCParameters){
             throw new Error("Cannot instantiate the class!");
         }
+        this.senderId = senderId;
         this.term = term;
         this.isResponse = isResponse;
     }
@@ -20,17 +22,15 @@ class AppendEntriesParameters extends RPCParameters {
      * 
      * @param {Number} term 
      * @param {Boolean} isResponse 
-     * @param {any} leaderId 
      * @param {Number} prevLogIndex 
      * @param {Number} prevLogTerm 
-     * @param {Log[]} entries 
+     * @param {LogRecord[]} entries 
      * @param {Number} leaderCommit 
      * @param {Boolean} success Use only if is response = true.
      * @param {Number} matchIndex Use only if is response = true. 
      */
-    constructor(term, isResponse, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit, success, matchIndex) {
-        super(term, isResponse);
-        this.leaderId = leaderId;
+    constructor(senderId, term, isResponse, prevLogIndex, prevLogTerm, entries, leaderCommit, success, matchIndex) {
+        super(senderId, term, isResponse);
         this.prevLogIndex = prevLogIndex;
         this.prevLogTerm = prevLogTerm;
         this.entries = entries;
@@ -41,16 +41,16 @@ class AppendEntriesParameters extends RPCParameters {
 
     /**
      * 
+     * @param {String} senderId 
      * @param {Number} term 
-     * @param {any} leaderId 
      * @param {Number} prevLogIndex 
      * @param {Number} prevLogTerm 
-     * @param {Log[]} entries 
+     * @param {LogRecord[]} entries 
      * @param {Number} leaderCommit 
      * @returns 
      */
-    static forRequest(term, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit){
-        return new AppendEntriesParameters(term, false, leaderId, prevLogIndex, prevLogTerm, entries, leaderCommit, undefined, undefined);
+    static forRequest(senderId, term, prevLogIndex, prevLogTerm, entries, leaderCommit){
+        return new AppendEntriesParameters(senderId, term, false, prevLogIndex, prevLogTerm, entries, leaderCommit, undefined, undefined);
     }
 
     /**
@@ -60,24 +60,23 @@ class AppendEntriesParameters extends RPCParameters {
      * @param {Number} matchIndex 
      * @returns 
      */
-    static forResponse(term, success, matchIndex){
-        return new AppendEntriesParameters(term, true, undefined, undefined, undefined, undefined, undefined, success, matchIndex);
+    static forResponse(senderId, term, success, matchIndex){
+        return new AppendEntriesParameters(senderId, term, true, undefined, undefined, undefined, undefined, success, matchIndex);
     }
 }
 
 class RequestVoteParameters extends RPCParameters {
     /**
      * 
+     * @param {String} senderId 
      * @param {Number} term 
      * @param {Boolean} isResponse 
-     * @param {any} candidateId 
      * @param {Number} lastLogIndex 
      * @param {Number} lastLogTerm 
      * @param {Boolean} voteGranted 
      */
-    constructor(term, isResponse, candidateId, lastLogIndex, lastLogTerm, voteGranted) {
-        super(term, isResponse);
-        this.candidateId = candidateId;
+    constructor(senderId, term, isResponse, lastLogIndex, lastLogTerm, voteGranted) {
+        super(senderId, term, isResponse);
         this.lastLogIndex = lastLogIndex; 
         this.lastLogTerm = lastLogTerm;
         this.voteGranted = voteGranted;
@@ -85,14 +84,14 @@ class RequestVoteParameters extends RPCParameters {
 
     /**
      * 
+     * @param {String} senderId 
      * @param {Number} term 
-     * @param {any} candidateId 
      * @param {Number} lastLogIndex 
      * @param {Number} lastLogTerm 
      * @returns 
      */
-    static forRequest(term, candidateId, lastLogIndex, lastLogTerm){
-        return new RequestVoteParameters(term, false, candidateId, lastLogIndex, lastLogTerm, undefined);
+    static forRequest(senderId, term, lastLogIndex, lastLogTerm){
+        return new RequestVoteParameters(senderId, term, false, lastLogIndex, lastLogTerm, undefined);
     }
 
     /**
@@ -101,26 +100,25 @@ class RequestVoteParameters extends RPCParameters {
      * @param {Boolean} voteGranted 
      * @returns 
      */
-    static forResponse(term, voteGranted){
-        return new AppendEntriesParameters(term, true, undefined, undefined, undefined, voteGranted);
+    static forResponse(senderId, term, voteGranted){
+        return new AppendEntriesParameters(senderId, term, true, undefined, undefined, voteGranted);
     }
 }
 
 class SnapshotParameters extends RPCParameters {
     /**
      * 
+     * @param {String} senderId 
      * @param {Number} term 
      * @param {Boolean} isResponse 
-     * @param {any} leaderId 
      * @param {Number} lastIncludedIndex 
      * @param {Number} lastIncludedTerm 
      * @param {Number} offset 
      * @param {Object} data 
      * @param {Boolean} done 
      */
-    constructor(term, isResponse, leaderId, lastIncludedIndex, lastIncludedTerm, offset, data, done) {
-        super(term, isResponse);
-        this.leaderId = leaderId;
+    constructor(senderId, term, isResponse, lastIncludedIndex, lastIncludedTerm, offset, data, done) {
+        super(senderId, term, isResponse);
         this.lastIncludedIndex = lastIncludedIndex; 
         this.lastIncludedTerm = lastIncludedTerm;
         this.offset = offset;
@@ -130,8 +128,8 @@ class SnapshotParameters extends RPCParameters {
 
     /**
      * 
+     * @param {String} senderId 
      * @param {Number} term 
-     * @param {any} leaderId 
      * @param {Number} lastIncludedIndex 
      * @param {Number} lastIncludedTerm 
      * @param {Number} offset 
@@ -139,8 +137,8 @@ class SnapshotParameters extends RPCParameters {
      * @param {Boolean} done 
      * @returns 
      */
-    static forRequest(term, leaderId, lastIncludedIndex, lastIncludedTerm, offset, data, done){
-        return new SnapshotParameters(term, false, leaderId, lastIncludedIndex, lastIncludedTerm, offset, data, done);
+    static forRequest(senderId, term, lastIncludedIndex, lastIncludedTerm, offset, data, done){
+        return new SnapshotParameters(senderId, term, false, lastIncludedIndex, lastIncludedTerm, offset, data, done);
     }
 
     /**
@@ -148,8 +146,8 @@ class SnapshotParameters extends RPCParameters {
      * @param {Number} term 
      * @returns 
      */
-    static forResponse(term){
-        return new SnapshotParameters(term, true, undefined, undefined, undefined, undefined, undefined, undefined);
+    static forResponse(senderId, term){
+        return new SnapshotParameters(senderId, term, true, undefined, undefined, undefined, undefined, undefined);
     }
 }
 

@@ -1,7 +1,7 @@
 import { Socket as SocketCl } from 'socket.io-client';
 import { RPCType } from '../enums/RPCType.js';
 import { RPCParameters, AppendEntriesParameters, RequestVoteParameters, SnapshotParameters } from './RPCParameters.js';
-import { Log } from './Log.js';
+import { LogRecord } from './Log.js';
 
 /**
  * Class containing the methods for sending RPCs to other nodes.
@@ -46,7 +46,7 @@ export class RPCManager {
      * @param {Number} term 
      * @param {Number} prevLogIndex 
      * @param {Number} prevLogTerm 
-     * @param {Log[]} entries 
+     * @param {LogRecord[]} entries 
      * @param {Number} leaderCommit 
      */
     sendReplication(term, prevLogIndex, prevLogTerm, entries, leaderCommit) {

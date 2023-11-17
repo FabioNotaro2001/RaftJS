@@ -1,4 +1,4 @@
-import { Socket } from 'socket.io-client';
+import { Socket as SocketCl } from 'socket.io-client';
 import { RPCType } from '../enums/RPCType.js';
 import { RPCParameters, AppendEntriesParameters, RequestVoteParameters, SnapshotParameters } from './RPCParameters.js';
 import { Log } from './Log.js';
@@ -10,7 +10,7 @@ export class RPCManager {
 
     /**
      * Creates an instance of the class.
-     * @param {Socket[]} sockets Array of sockets for the other nodes.
+     * @param {SocketCl[]} sockets Array of sockets for the other nodes.
      * @param {String} nodeId Id of the node linked to this manager instance.
      */
     constructor(sockets, nodeId){
@@ -21,7 +21,7 @@ export class RPCManager {
 
     /**
      * 
-     * @param {Socket} receiver Destination server. 
+     * @param {SocketCl} receiver Destination server. 
      * @param {String} rpcType 
      * @param {RPCParameters} rpcParameters
      * @returns {Boolean}
@@ -40,28 +40,6 @@ export class RPCManager {
             s.emit(rpcType, rpcParameters);
         })
     }
-    
-    /**
-     * 
-     * @param {Number} term 
-     * @param {Number} prevLogIndex 
-     * @param {Number} prevLogTerm 
-     * @param {Number} leaderCommit 
-     */
-    sendHeartbeat(term, prevLogIndex, prevLogTerm, leaderCommit) {
-        this.sendAll(RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(term, this.currentId, prevLogIndex, prevLogTerm, [], leaderCommit));
-    }
-    
-    /**
-     * 
-     * @param {Socket} receiver 
-     * @param {Number} term 
-     * @param {Boolean} success 
-     * @param {Number} matchIndex 
-     */
-    sendHearbeatResponse(receiver, term, success, matchIndex ) {
-        this.sendTo(receiver, RPCType.APPENDENTRIES, AppendEntriesParameters.forResponse(term, success, matchIndex));
-    }
 
     /**
      * 
@@ -77,7 +55,7 @@ export class RPCManager {
     
     /**
      * 
-     * @param {Socket} receiver 
+     * @param {SocketCl} receiver 
      * @param {Number} term 
      * @param {Boolean} success 
      * @param {Number} matchIndex 
@@ -99,10 +77,18 @@ export class RPCManager {
     
     /**
      * 
-     * @param {Socket} receiver 
+     * @param {SocketCl} receiver 
      * @param {Boolean} voteGranted 
      */
     sendVote(receiver, voteGranted) {
         this.sendTo(receiver, RPCType.REQUESTVOTE, RequestVoteParameters.forResponse(term, voteGranted));
     }
+    
+    sendSnapshotMessage() {
+        this.sendAll(RPCType.SNAPSHOT, SnapshotParameters.forRequest(/* ... */))
+    } 
+
+    sendSnapshotResponse(receiver) {
+        this.sendTo(receiver, RPCType.SNAPSHOT, SnapshotParameters.forResponse(/* ... */))
+    } 
 }

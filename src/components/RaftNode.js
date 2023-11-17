@@ -1,10 +1,11 @@
-import { createServer } from "http";
+import { createServer, Server as HTTPServer } from "http";
 import { Server } from "socket.io";
-import { Socket, io } from "socket.io-client"
+import { Socket as SocketCl, io } from "socket.io-client"
 import { RPCType } from "../enums/RPCType";
 import { AppendEntriesParameters } from "./RPCParameters";
 import { State } from "../enums/State";
 import { RPCManager } from "./RPCManager";
+import { Log } from "./Log";
 
 export class RaftNode {
     /**
@@ -17,27 +18,54 @@ export class RaftNode {
      * @param {String[]} otherNodes Hosts for the other nodes in the cluster.
      */
     constructor(id, minLeaderTimeout, maxLeaderTimeout, minElectionDelay, dbManager, otherNodes) {
+        /** @type {String} */
         this.id = id;
+        /** @type {String} */
         this.state = State.FOLLOWER;
+        /** @type {Number} */
         this.currentTerm = 0;
-        this.votedFor = undefined;
+        /** @type {String} */
+        this.votedFor = null;
+        /** @type {Log[]} */
         this.log = [];
-        this.commitIndex = 0;
-        this.lastApplied = 0;
+        /** @type {Number} */
+        this.commitIndex = -1;
+        /** @type {Number} */
+        this.lastApplied = -1;
+        /** @type {Number} */
         this.minLeaderTimeout = minLeaderTimeout;
+        /** @type {Number} */
         this.maxLeaderTimeout = maxLeaderTimeout;
+        /** @type {Number} */
         this.minElectionDelayMS = minElectionDelay;
+        /** @type {any} */
         this.dbManager = dbManager;
-        this.nextIndex = 1;
-        this.matchIndex = 0;
+        /**
+         * Leader-only.
+         * 
+         * Index of the next log entry to send to each follower node, initialized after every election to the index of the last record in the leader's log +1.
+         * @type {Number[]}
+         */
+        this.nextIndex = [];
+        /**
+         * Leader-only.
+         * 
+         * Index of highest log entry known to be replicated on each follower node. Reinitialized after every election. 
+         * @type {Number[]}
+         */
+        this.matchIndex = [];
+        /** @type {String[]} */
         this.otherNodes = otherNodes;
 
+        /** @type {String | null} */
+        this.currentLeader = null;
+
+        /** @type {HTTPServer} */
         this.httpServer = createServer();
+        /** @type {Server} */
         this.io = new Server(this.httpServer);
 
-        /**
-         * @type {Socket[]}
-         */
+        /** @type {SocketCl[]} */
         this.sockets = [];
         otherNodes.forEach(host => {
             let sock = io(host, {
@@ -48,20 +76,29 @@ export class RaftNode {
         });
 
         this.sockets.forEach(sock => {
-            sock.on(RPCType.APPENDENTRIES, this.onAppendEntriesMessage)
+            sock.on(RPCType.APPENDENTRIES, (args) => { this.onAppendEntriesMessage(sock, args) })
         });
 
+        /** @type {RPCManager} */
         this.rpcManager = new RPCManager(this.sockets, this.id);
     }
 
     /**
      * 
-     * @param {AppendEntriesParameters} payload 
+     * @param {SocketCl} sender 
+     * @param {AppendEntriesParameters} args 
      */
-    onAppendEntriesMessage(payload) {
+    onAppendEntriesMessage(sender, args) {
+
+        // TODO: if leader or candidate, check term number. If it's greater, update own term and change state to follower.
+        // TODO: if follower and term number is greater than own, remove non committed records of smaller term and update own term.
+
         switch (this.state) {
             case State.FOLLOWER: {
-                if ()
+                if (payload.term < this.currentTerm) {
+                    this.rpcManager.sendReplicationResponse(sender, this.currentTerm, false, this.commitIndex)
+                    return;
+                }
             }
         }
     }

@@ -1,3 +1,5 @@
+import { Log } from "./Log";
+
 class RPCParameters {
     /**
      * 

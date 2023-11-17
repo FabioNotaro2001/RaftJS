@@ -14,12 +14,7 @@
   "author": "Andrea, Giacomo, Fabio",
   "license": "ISC",
   "dependencies": {
-    "link-module-alias": "^1.2.0",
     "socket.io": "^4.7.2",
     "socket.io-client": "^4.7.2"
-  },
-  "_moduleAliases": {
-    "@components": "./src/components",
-    "@enums": "./src/enums"
   }
 }

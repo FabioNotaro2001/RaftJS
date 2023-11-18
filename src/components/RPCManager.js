@@ -84,10 +84,17 @@ export class RPCManager {
         this.sendTo(receiver, RPCType.REQUESTVOTE, RequestVoteParameters.forResponse(term, voteGranted));
     }
     
+    /**
+     * Send a snapshot RPC message to all other nodes.
+     */
     sendSnapshotMessage() {
         this.sendAll(RPCType.SNAPSHOT, SnapshotParameters.forRequest(/* ... */))
     } 
 
+    /**
+     * Send a snapshot RPC response to a specified receiver.
+     * @param {SocketCl} receiver Socket of the node to receive the snapshot response.
+     */
     sendSnapshotResponse(receiver) {
         this.sendTo(receiver, RPCType.SNAPSHOT, SnapshotParameters.forResponse(/* ... */))
     } 

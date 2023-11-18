@@ -96,9 +96,9 @@ export class RaftNode {
     }
 
     /**
-     * 
-     * @param {SocketCl} sender 
-     * @param {AppendEntriesParameters} args 
+     * Handles incoming AppendEntries RPC messages.
+     * @param {SocketCl} sender The socket representing the sender node.
+     * @param {AppendEntriesParameters} args The parameters of the AppendEntries RPC.
      */
     onAppendEntriesMessage(sender, args) {
         
@@ -183,10 +183,18 @@ export class RaftNode {
         }
     }
 
+    /**
+     * Placeholder for handling incoming RequestVote RPC messages.
+     * @param {any} payload The payload of the RequestVote RPC.
+     */
     onRequestVoteMessage(payload) {
 
     }
 
+    /**
+     * Placeholder for handling incoming Snapshot RPC messages.
+     * @param {any} payload The payload of the Snapshot RPC.
+     */
     onSnapshotMessage(payload) {
 
     }

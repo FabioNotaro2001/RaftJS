@@ -52,6 +52,19 @@ export class RPCManager {
     sendReplication(term, prevLogIndex, prevLogTerm, entries, leaderCommit) {
         this.sendAll(RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(term, prevLogIndex, prevLogTerm, entries, leaderCommit));
     }
+
+    /**
+     * RPC request for appending entries and log replication in a single node.
+     * @param {SocketCl} receiver 
+     * @param {Number} term Leader's current term.
+     * @param {Number} prevLogIndex Index of log entry immediately preceding new ones.
+     * @param {Number} prevLogTerm Term of prevLogIndex entry
+     * @param {LogRecord[]} entries Log entries to store.
+     * @param {Number} leaderCommit Leader’s commitIndex
+     */
+    sendReplicationTo(receiver, term, prevLogIndex, prevLogTerm, entries, leaderCommit) {
+        this.sendTo(receiver, RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(term, prevLogIndex, prevLogTerm, entries, leaderCommit));
+    }
     
     /**
      * RPC response for appending entries and log replication.
@@ -73,6 +86,18 @@ export class RPCManager {
      */
     sendElectionNotice(term, candidateId, lastLogIndex, lastLogTerm) {
         this.sendAll(RPCType.REQUESTVOTE, RequestVoteParameters.forRequest(term, candidateId, lastLogIndex, lastLogTerm));
+    }
+
+    /**
+     * RPC request made by a candidate for requesting a new leader election to a single node.
+     * @param {SocketCl} receiver 
+     * @param {Number} term Candidate’s term.
+     * @param {Number} candidateId Candidate requesting vote.
+     * @param {Number} lastLogIndex Index of candidate’s last log entry.
+     * @param {Number} lastLogTerm Term of candidate’s last log entry.
+     */
+    sendElectionNoticeTo(receiver, term, candidateId, lastLogIndex, lastLogTerm) {
+        this.sendTo(receiver, RPCType.REQUESTVOTE, RequestVoteParameters.forRequest(term, candidateId, lastLogIndex, lastLogTerm));
     }
     
     /**

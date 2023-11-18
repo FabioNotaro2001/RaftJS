@@ -7,7 +7,7 @@ import { State } from "../enums/State";
 import { RPCManager } from "./RPCManager";
 import { LogRecord } from "./Log";
 
-const MAX_ENTRIES_IN_REQUEST = 10;
+const MAX_ENTRIES_IN_REQUEST = 10;  // Max number of request that can be put together in a single request.
 
 export class RaftNode {
     /**

@@ -1,3 +1,6 @@
+/**
+ * Enumerator for types of commands.
+ */
 const CommandType = Object.freeze({
     CREATETABLE : "createtable",
     REMOVETABLE : "removetable",

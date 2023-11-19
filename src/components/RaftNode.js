@@ -377,36 +377,48 @@ export class RaftNode {
         }
     }
 
+    /**
+    * Resets the leader timeout by stopping the current timeout and initiating a new one.
+    */
     resetLeaderTimeout() {
         this.stopLeaderTimeout();
         this.waitForLeaderTimeout();
     }
 
+    /**
+     * Resets the election timeout by stopping the current timeout and initiating a new one.
+     */
     resetElectionTimeout() {
         this.stopElectionTimeout();
         this.waitForElectionTimeout();
     }
 
     /**
-     * 
-     * @param {String | null} nodeId 
+     * Resets the heartbeat timeout for a specific node or all nodes.
+     * @param {String | null} nodeId - The ID of the node for which to reset the heartbeat timeout.
      */
     resetHeartbeatTimeout(nodeId = null) {
         this.stopHeartbeatTimeout(nodeId);
         this.waitForHeartbeatTimeout(nodeId);
     }
 
+    /**
+     * Stops the leader timeout, preventing a new election from starting.
+     */
     stopLeaderTimeout() {
         clearInterval(this.leaderTimeout);
     }
 
+    /**
+     * Stops the election timeout, preventing a new election from starting.
+     */
     stopElectionTimeout() {
         clearInterval(this.electionTimeout);
     }
 
     /**
-     * 
-     * @param {String | null} nodeId 
+     * Stops the heartbeat timeout for a specific node or all nodes.
+     * @param {String | null} nodeId - The ID of the node for which to stop the heartbeat timeout. If null, stops all timeouts.
      */
     stopHeartbeatTimeout(nodeId = null) {
         if (nodeId != null) {

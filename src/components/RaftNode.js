@@ -81,7 +81,16 @@ export class RaftNode {
         /** @type {Server} */
         this.io = new Server(this.httpServer);
 
-        /** @type {Map<String, SocketCl>} */
+         /** 
+          * Maps the socket id to the corresponding node id. 
+          * @type {Map<String, String>} 
+         */
+        this.socketToNodeId = new Map();
+
+        /**
+         * Maps the node id to the corresponding socket.
+         *  @type {Map<String, SocketCl>} 
+        */
         this.sockets = new Map();
         otherNodes.forEach((host, id) => {
             let sock = io(host, {
@@ -90,7 +99,8 @@ export class RaftNode {
             
             sock.connect();
             
-            this.sockets.set(id, sock);            
+            this.sockets.set(id, sock);
+            this.socketToNodeId.set(sock.id, nodeId)           
         });
 
         /** @type {Number} */
@@ -139,12 +149,13 @@ export class RaftNode {
         switch (this.state) {
             case State.FOLLOWER: {
                 if (args.isResponse) {
-                    break; // TODO: send false.
+                    this.rpcManager.sendReplicationResponse(sender, this.currentTerm, false, this.commitIndex);
+                    break; 
                 }
 
                 if (args.term < this.currentTerm || 
                     this.log[args.prevLogIndex]?.term !== args.prevLogTerm) {
-                    this.rpcManager.sendReplicationResponse(sender, this.currentTerm, false, this.commitIndex)
+                    this.rpcManager.sendReplicationResponse(sender, this.currentTerm, false, this.commitIndex);
                     break;
                 }
 
@@ -169,7 +180,7 @@ export class RaftNode {
                 }
 
                 this.rpcManager.sendReplicationResponse(sender, this.currentTerm, true, this.commitIndex);
-                // TODO: delete setInteval for leader timeout and start a new one.
+                this.resetLeaderTimeout();
             }
             case State.LEADER: {
                 if (!args.isResponse) {
@@ -189,15 +200,16 @@ export class RaftNode {
                     this.nextIndex.set(args.senderId, args.matchIndex + 1);
                     
                     let prevLogIndex = this.nextIndex[args.senderId] - 1;
-                    let prevlogTerm = this.log[prevLogIndex];
+                    let prevLogTerm = this.log[prevLogIndex];
                     
                     // Sends missing entries to the node.
                     let missingEntries = this.log.slice(args.matchIndex + 1);
-                    if (missingEntries.length > 0) {
-                        // TODO: Ricordati di chiamare resetHeartbeat() per lo specifico socket/nodo.
-                        this.rpcManager.sendReplicationTo(sender, this.currentTerm, prevLogIndex, prevlogTerm, missingEntries, this.commitIndex);
+                    if (missingEntries.length > 0) { 
+                        this.rpcManager.sendReplicationTo(sender, this.currentTerm, prevLogIndex, prevLogTerm, missingEntries, this.commitIndex);
+                        this.resetHeartbeatTimeout(args.matchIndex, this.socketToNodeId.get(sender.id));
                     }
                     // TODO: delete previous setInterval
+
                     // TODO: new setInterval for heartbeat (with eventual missing entries (see last parameter ->))
                 } else {    // Leader was rejected.
                     if (args.term > this.currentTerm) {
@@ -248,7 +260,7 @@ export class RaftNode {
             votesGathered = 1;
             node.rpcManager.sendElectionNotice(node.currentTerm, node.id, node.log.length-1, node.log[-1].term);
             node.waitForElectionTimeout();  // Set a timeout in case the election doesn't end.
-            node.waitForHeartbeatTimeout(); // Set a timeout in case other nodes do not respond.
+            node.waitForHeartbeatTimeout(0); // Set a timeout in case other nodes do not respond.
         }, extractedInterval)
     }
 
@@ -267,7 +279,7 @@ export class RaftNode {
             votesGathered = 1;
             node.rpcManager.sendElectionNotice(node.currentTerm, node.id, node.log.length-1, node.log[-1].term);
             node.waitForElectionTimeout();  // Set a timeout in case the new election doesn't end.
-            node.waitForHeartbeatTimeout(); // Set a timeout in case other nodes do not respond.
+            node.waitForHeartbeatTimeout(0); // Set a timeout in case other nodes do not respond.
         }, extractedInterval)
     }
 
@@ -275,21 +287,25 @@ export class RaftNode {
      * Set a timeout to wait for any heartbeat.
      * 
      * In case the timeout expires, sends another heartbeat of type depending on the current state.
-     * @param {String | null} nodeId The node to which we must send the heartbeat when the timeout expires. If null, the heartbeat is sent to all other nodes. 
+     * @param {Number} matchIndex 
+     * @param {String | null} nodeId The node to which we must send the heartbeat when the timeout expires. If null, the heartbeat is sent to all other nodes.
      */
-    waitForHeartbeatTimeout(nodeId = null){
+    waitForHeartbeatTimeout(matchIndex, nodeId = null){
         let node = this;
         let sendHeartbeat = null;
         if(nodeId != null){ // The node is specified.
             if(node.state === State.CANDIDATE){  // The message sent is a vote request.
                 sendHeartbeat = () => {
                     node.rpcManager.sendElectionNoticeTo(node.sockets.get(nodeId), node.term, node.id, node.log.length - 1, node.log[-1].term);
-                    node.waitForHeartbeatTimeout(nodeId);
+                    node.waitForHeartbeatTimeout(matchIndex, nodeId);
                 }; 
             } else if (node.state === State.LEADER){    // The message sent is a replication request.
                 sendHeartbeat = () => {
-                    node.rpcManager.sendReplicationTo(node.sockets.get(nodeId), node.term, node.log.length - 1, node.log[-1].term);
-                    node.waitForHeartbeatTimeout(nodeId);
+                    let missingEntries = node.log.slice(matchIndex + 1);
+                    let prevLogIndex = this.nextIndex[node.id] - 1;
+                    let prevLogTerm = this.log[prevLogIndex];
+                    node.rpcManager.sendReplicationTo(node.sockets.get(nodeId), node.term, prevLogIndex, prevLogTerm, missingEntries, node.commitIndex+1);
+                    node.waitForHeartbeatTimeout(matchIndex, nodeId);
                 }; 
             } else{ // Illegal state.
                 throw new Error("Cannot send heartbeat when in state " + Object.entries(State).find(e => e[1] === node.state)?.at(0));
@@ -301,12 +317,13 @@ export class RaftNode {
             if(node.state === State.CANDIDATE){  // The message sent is a vote request.
                 sendHeartbeat = () => {
                     node.rpcManager.sendElectionNotice(node.term, node.id, node.log.length - 1, node.log[-1].term);
-                    node.waitForHeartbeatTimeout();
+                    node.waitForHeartbeatTimeout(matchIndex);
                 }; 
             } else if (node.state === State.LEADER){    // The message sent is a replication request.
                 sendHeartbeat = () => {
-                    node.rpcManager.sendReplication(node.term, node.log.length - 1, node.log[-1].term);
-                    node.waitForHeartbeatTimeout();
+                    let missingEntries = node.log.slice(matchIndex + 1);
+                    node.rpcManager.sendReplication(node.term, node.log.length - 1, node.log[-1].term, missingEntries, node.commitIndex+1);
+                    node.waitForHeartbeatTimeout(matchIndex);
                 }; 
             } else{ // Illegal state.
                 throw new Error("Cannot send heartbeat when in state " + Object.entries(State).find(e => e[1] === node.state)?.at(0));
@@ -320,30 +337,44 @@ export class RaftNode {
     }
 
     resetLeaderTimeout(){
-
+        this.stopLeaderTimeout();
+        this.waitForLeaderTimeout();
     }
 
     resetElectionTimeout(){
-
+        this.stopElectionTimeout();
+        this.waitForElectionTimeout();
     }
 
-    resetForHeartbeatTimeout(socketId){
-
+    /**
+     * 
+     * @param {Number} matchIndex 
+     * @param {String | null} nodeId 
+     */
+    resetHeartbeatTimeout(matchIndex, nodeId = null){
+        this.stopHeartbeatTimeout(nodeId);
+        this.waitForHeartbeatTimeout(matchIndex, nodeId);
     }
 
     stopLeaderTimeout(){
-
+        clearInterval(this.leaderTimeout);
     }
 
     stopElectionTimeout(){
-
+        clearInterval(this.electionTimeout);
     }
 
-    stopHeartbeatTimeout(socketId){
-
-    }
-
-    stopAllHeartbeatTimeouts(socketIds){
-
+    /**
+     * 
+     * @param {String | null} nodeId 
+     */
+    stopHeartbeatTimeout(nodeId = null){
+        if(nodeId != null){
+            clearInterval(this.heartbeatTimeouts.get(nodeId));
+        } else {
+            this.sockets.forEach((_,id) => {
+                clearInterval(this.heartbeatTimeouts.get(id));                
+            });
+        }
     }
 }

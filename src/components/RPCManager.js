@@ -45,7 +45,7 @@ export class RPCManager {
      * RPC request for appending entries and log replication.
      * @param {Number} term Leader's current term.
      * @param {Number} prevLogIndex Index of log entry immediately preceding new ones.
-     * @param {Number} prevLogTerm Term of prevLogIndex entry
+     * @param {Number | null} prevLogTerm Term of prevLogIndex entry
      * @param {LogRecord[]} entries Log entries to store.
      * @param {Number} leaderCommit Leader’s commitIndex
      */
@@ -58,7 +58,7 @@ export class RPCManager {
      * @param {SocketCl} receiver 
      * @param {Number} term Leader's current term.
      * @param {Number} prevLogIndex Index of log entry immediately preceding new ones.
-     * @param {Number} prevLogTerm Term of prevLogIndex entry
+     * @param {Number | null} prevLogTerm Term of prevLogIndex entry
      * @param {LogRecord[]} entries Log entries to store.
      * @param {Number} leaderCommit Leader’s commitIndex
      */
@@ -82,7 +82,7 @@ export class RPCManager {
      * @param {Number} term Candidate’s term.
      * @param {Number} candidateId Candidate requesting vote.
      * @param {Number} lastLogIndex Index of candidate’s last log entry.
-     * @param {Number} lastLogTerm Term of candidate’s last log entry.
+     * @param {Number | null} lastLogTerm Term of candidate’s last log entry.
      */
     sendElectionNotice(term, candidateId, lastLogIndex, lastLogTerm) {
         this.sendAll(RPCType.REQUESTVOTE, RequestVoteParameters.forRequest(term, candidateId, lastLogIndex, lastLogTerm));
@@ -94,7 +94,7 @@ export class RPCManager {
      * @param {Number} term Candidate’s term.
      * @param {Number} candidateId Candidate requesting vote.
      * @param {Number} lastLogIndex Index of candidate’s last log entry.
-     * @param {Number} lastLogTerm Term of candidate’s last log entry.
+     * @param {Number | null} lastLogTerm Term of candidate’s last log entry.
      */
     sendElectionNoticeTo(receiver, term, candidateId, lastLogIndex, lastLogTerm) {
         this.sendTo(receiver, RPCType.REQUESTVOTE, RequestVoteParameters.forRequest(term, candidateId, lastLogIndex, lastLogTerm));

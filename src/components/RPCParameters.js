@@ -1,4 +1,4 @@
-import { LogRecord } from "./Log";
+import { LogRecord } from "./Log.js";
 
 class RPCParameters {
     /**

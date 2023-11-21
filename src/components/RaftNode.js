@@ -7,10 +7,9 @@ import { State } from "../enums/State.js";
 import { RPCManager } from "./RPCManager.js";
 import { LogRecord } from "./Log.js";
 import { error } from "console";
+import { DBManager } from "./DBManager.js";
 
 // const MAX_ENTRIES_IN_REQUEST = 10;  // Max number of request that can be put together in a single request.
-
-// FIXME: checks on the various get() calls on maps?
 
 export class RaftNode {
     /**
@@ -22,10 +21,14 @@ export class RaftNode {
      * @param {Number} maxElectionTimeout Maximum time in ms to wait before launching a new election after a failed one.
      * @param {Number} minElectionDelay Minimum time in ms before a new election can be started. Elections started before this amount of time are ignored.
      * @param {Number} heartbeatTimeout Time in ms before sending a new heartbeat.
-     * @param {any} dbManager Manager for the database of the node.
+     * @param {String} hostForDB 
+     * @param {String} userForDB 
+     * @param {String} passwordForDB 
+     * @param {String} databaseName 
      * @param {Map<String, String>} otherNodes Pairs IPAddress-IdNode for the other nodes in the cluster.
+     * @param {boolean} [debug=false] 
      */
-    constructor(id, minLeaderTimeout, maxElectionTimeout, minElectionTimeout, minElectionDelay, heartbeatTimeout, dbManager, otherNodes, debug = false) {
+    constructor(id, minLeaderTimeout, maxElectionTimeout, minElectionTimeout, minElectionDelay, heartbeatTimeout, hostForDB, userForDB, passwordForDB, databaseName, otherNodes, debug = false) {
         /** @type {String} */
         this.id = id;
         /** @type {Boolean} */
@@ -39,7 +42,7 @@ export class RaftNode {
         /** @type {Number} */
         this.votesGathered = 0;
         /** @type {LogRecord[]} */
-        this.log = [];      // FIXME: maybe change to map? EVERYTHING MUST BE A MAP AAAAAAAAAAAAA.
+        this.log = [];      
         /** @type {Number} */
         this.commitIndex = -1;
         /** @type {Number} */
@@ -57,7 +60,7 @@ export class RaftNode {
         /** @type {Number} */
         this.heartbeatTimeout = heartbeatTimeout
         /** @type {any} */
-        this.dbManager = dbManager;
+        this.dbManager = new DBManager(hostForDB, userForDB, passwordForDB, databaseName);
         /**
          * Leader-only.
          * 
@@ -123,6 +126,9 @@ export class RaftNode {
         }
 
         this.debugLog("Starting node...");
+
+        // Connect the node to the database through its DBmanager.
+        this.dbManager.connect();
 
         // Start node server.
         this.httpServer = createServer();
@@ -199,6 +205,9 @@ export class RaftNode {
 
         this.debugLog("Stopping node...");
 
+        // Disconnect the node to the database through its DBmanager.
+        this.dbManager.disconnect();
+
         this.httpServer.close();
         this.server.close();
         this.server.disconnectSockets(true);
@@ -266,12 +275,12 @@ export class RaftNode {
                     this.debugLog("Added %d entries to log", args.entries.length);
                 }
                 
-                if (args.leaderCommit > this.commitIndex) {     // FIXME: is this condition ok?
+                if (args.leaderCommit > this.commitIndex) {
                     // TODO: handle commits, requires db manager.
-                    // ...
+                    // Committare i record che sono da this.commitIndex+1 a lastIndex estremi inclusi.
                     this.debugLog("Committed %d log entries to database.", args.leaderCommit - this.commitIndex);
                     let lastIndex = args.prevLogIndex + args.entries.length;
-                    this.commitIndex = args.leaderCommit <= lastIndex ? args.leaderCommit : lastIndex;
+                    this.commitIndex =  lastIndex < args.leaderCommit ? lastIndex: args.leaderCommit ;
                 }
 
                 this.rpcManager.sendReplicationResponse(sender, this.currentTerm, true, this.commitIndex);

@@ -21,13 +21,14 @@ export class RaftNode {
      * @param {Number} maxElectionTimeout Maximum time in ms to wait before launching a new election after a failed one.
      * @param {Number} minElectionDelay Minimum time in ms before a new election can be started. Elections started before this amount of time are ignored.
      * @param {Number} heartbeatTimeout Time in ms before sending a new heartbeat.
-     * @param {String} hostForDB 
-     * @param {String} userForDB 
-     * @param {String} passwordForDB 
-     * @param {String} databaseName 
+     * @param {String} hostForDB Hostname or IP address for the database connection.
+     * @param {String} userForDB Database user.
+     * @param {String} passwordForDB Database password.
+     * @param {String} databaseName Name of the database.
      * @param {Map<String, String>} otherNodes Pairs IPAddress-IdNode for the other nodes in the cluster.
-     * @param {boolean} [debug=false] 
+     * @param {boolean} [debug=false] Flag indicating whether debugging is enabled.
      */
+
     constructor(id, minLeaderTimeout, maxElectionTimeout, minElectionTimeout, minElectionDelay, heartbeatTimeout, hostForDB, userForDB, passwordForDB, databaseName, otherNodes, debug = false) {
         /** @type {String} */
         this.id = id;
@@ -451,7 +452,7 @@ export class RaftNode {
      * Set a timeout to wait for any heartbeat.
      * 
      * In case the timeout expires, sends another heartbeat of type depending on the current state.
-     * @param {Number} matchIndex 
+     * @param {Number} matchIndex Index of highest log entry known to be replicated on each follower node.
      * @param {String | null} nodeId The node to which we must send the heartbeat when the timeout expires. If null, the heartbeat is sent to all other nodes.
      */
     waitForHeartbeatTimeout(nodeId = null) {

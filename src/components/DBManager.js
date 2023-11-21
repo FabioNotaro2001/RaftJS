@@ -2,11 +2,10 @@ const mysql = require('mysql2/promise');
 
 export class DBManager {
     /**
-     * 
-     * @param {String} host 
-     * @param {String} user 
-     * @param {String} password 
-     * @param {String} database 
+     * Constructor for the DBManager class.
+     * @param {String} host The database host.
+     * @param {String} user The database user.
+     * @param {String} password The database password.
      */
     constructor(host, user, password, database) {
         this.host = host;
@@ -20,6 +19,9 @@ export class DBManager {
         // TODO: if this dbmanager handles the first connection, then delete all tables content.
     }
 
+    /**
+     * Establishes a connection to the database.
+     */
     async connect() {
         this.connection = await mysql.createConnection({
             host: this.host,    // According to configuration.
@@ -38,6 +40,9 @@ export class DBManager {
         });
     }
 
+    /**
+     * Closes the connection to the database.
+     */
     async disconnect() {
         // Close the conncetion.
         await this.connection.end((err) => {
@@ -49,6 +54,11 @@ export class DBManager {
         });
     }
 
+    /**
+     * Adds a new user to the database.
+     * @param {String} usernameParameter The username of the new user.
+     * @param {String} passwordParameter The password of the new user.
+     */
     // TODO: Create methods as API that execute specific queries.
     queryAddNewUser(usernameParameter, passwordParameter){
         // execute will internally call prepare and query
@@ -59,6 +69,15 @@ export class DBManager {
         
     }
 
+    /**
+     * Adds a new bid to the database.
+     * @param {String} id The bid ID.
+     * @param {String} userMaker The user making the bid.
+     * @param {String} auctionId The ID of the auction.
+     * @param {Number} value The bid value.
+     * @param {Boolean} isWinner Indicates if the bid is the winning bid.
+     * @returns {Boolean} Returns true if the auction is not closed, otherwise false.
+     */
     // FIXME: check if value is > lastBid for that auction and value > startingPrice of the auction.
     // FIXME: add the constraint that the creator of the auction cannot make a bid for it
     async queryAddNewBid(id, userMaker, auctionId, value, isWinner){
@@ -73,9 +92,9 @@ export class DBManager {
     }
 
     /**
-     * 
-     * @param {*} auctionId 
-     * @returns Promise <Boolean> 
+     * Checks if an auction is not already closed.
+     * @param {String} auctionId The ID of the auction.
+     * @returns {Promise<Boolean>} Returns a promise that resolves if an auction is close.
      */
     async checkAuctionNotAlreadyClosed(auctionId){
         return await this.connection.execute(
@@ -89,7 +108,14 @@ export class DBManager {
         });
     }
     
-    
+    /**
+     * Adds a new auction to the database.
+     * @param {String} id The auction ID.
+     * @param {String} objectName The name of the auctioned object.
+     * @param {String} objectDescription The description of the auctioned object.
+     * @param {Number} startingPrice The starting price of the auction.
+     * @param {String} userMaker The user creating the auction.
+     */
     queryAddNewAuction(id, objectName, objectDescription, startingPrice, userMaker){
         let now = new Date().toISOString();
         this.connection.execute(
@@ -98,6 +124,12 @@ export class DBManager {
         );
     }
 
+    /**
+     * Checks if a given username and password match a user in the database.
+     * @param {String} username The username.
+     * @param {String} password The password.
+     * @returns {Promise<Boolean>} Returns a promise that resolves to true if the login is successful, otherwise false.
+     */
     async queryForLogin(username, password){
         const [rows, fields] = await this.connection.execute(
             'SELECT 1 AS Success FROM Users WHERE Username = ? AND Password = ?',

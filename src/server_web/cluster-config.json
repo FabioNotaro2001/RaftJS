@@ -1,0 +1,23 @@
+{
+    "clusterSize": 5,
+    "port": 11111,
+    "ownId": "node1",
+    "otherNodes": [
+        {
+            "host": "",
+            "id": "node2"
+        },
+        {
+            "host": "",
+            "id": "node3"
+        },
+        {
+            "host": "",
+            "id": "node4"
+        },
+        {
+            "host": "",
+            "id": "node5"
+        }
+    ]
+}

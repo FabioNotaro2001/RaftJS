@@ -21,13 +21,24 @@ app.post("/createuser", (req, res) => {
 
 app.post("/loginuser", (req, res) => {
     // TODO Verifica i dati inseriti dall'utente nel database e restituire la risposta settando in tal caso il cookie.
-    console.log(req.body);
-    res.cookie("user", "1", {maxAge:60000})
+    // Sets the cookie with the expiration timestamp.
+    const expireTime = new Date().getTime() + 86400000; // 1 giorno
+    res.cookie("user", expireTime, { maxAge:  86400000});
     res.sendStatus(201);
 });
 
+app.post("/logoutuser", (req, res) => {
+    // Checks whether the "user" cookie is present in the request.
+    if (req.cookies && req.cookies.user) {
+        // Delete cookie.
+        res.clearCookie("user");
+        res.sendStatus(200);
+    } else {
+        res.sendStatus(200);
+    }
+});
+
 app.get('/', (req, res) => {
-    //res.sendFile(path.join(__dirname, "html/login.html"));
     if(req.cookies.user){
         res.redirect("/home");
     } else {
@@ -35,12 +46,36 @@ app.get('/', (req, res) => {
     }
 });
 
+// Middleware to check the validity of the cookie.
+const checkCookieValidity = (req, res, next) => {
+    if (req.cookies.user) {
+        const now = new Date().getTime();
+        const cookieExpireTime = req.cookies.user;
+
+        if (now < cookieExpireTime) {
+            // If the cookie is still valid, we call next() to proceed to the next route.
+            next();
+            return;
+        }
+    }
+
+    // If the cookie has expired or is not present, we redirect the user to the login page.
+    res.redirect("/login");
+};
+
+// Using middleware for all routes that require cookie verification.
+app.use(['/home', '/auction'], checkCookieValidity);
+
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, "html/login.html"));
 });
 
 app.get('/signup', (req, res) => {
     res.sendFile(path.join(__dirname, "html/signUp.html"));
+});
+
+app.get('/home', (req, res) => {
+    res.sendFile(path.join(__dirname, "html/home.html"));
 });
 
 app.listen(port, () => {

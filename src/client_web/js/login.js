@@ -15,8 +15,6 @@ $(document).ready(function () {
     $("form").submit(function (event) {
         event.preventDefault();
         const datas = getFormData("form_login");
-
-        // Converti l'oggetto in una stringa JSON
         const jsonData = JSON.stringify(datas);
 
         $.ajax({
@@ -31,7 +29,7 @@ $(document).ready(function () {
             if(success!=="success"){
                 addAlert("alert","alert-danger","Errore nella login.","");
             } else {
-               // window.location.href="/dafaaaaaaaaare";
+               window.location.href="/home";
             }
         })
         .fail(function (response) {

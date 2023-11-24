@@ -21,19 +21,50 @@ app.post("/createuser", (req, res) => {
 
 app.post("/loginuser", (req, res) => {
     // TODO Verifica i dati inseriti dall'utente nel database e restituire la risposta settando in tal caso il cookie.
-    console.log(req.body);
-    res.cookie("user", "1", {maxAge:60000})
+    // Imposta il cookie con il timestamp di scadenza
+    const expireTime = new Date().getTime() + 86400000; // 1 giorno
+    res.cookie("user", expireTime, { maxAge:  86400000});
     res.sendStatus(201);
 });
 
+app.post("/logoutuser", (req, res) => {
+    // Verifica se il cookie "user" è presente nella richiesta
+    if (req.cookies && req.cookies.user) {
+        // Elimina il cookie
+        res.clearCookie("user");
+        res.sendStatus(200);
+    } else {
+        res.sendStatus(200);
+    }
+});
+
 app.get('/', (req, res) => {
-    //res.sendFile(path.join(__dirname, "html/login.html"));
     if(req.cookies.user){
         res.redirect("/home");
     } else {
         res.redirect("/login");
     }
 });
+
+// Middleware per verificare la validità del cookie.
+const checkCookieValidity = (req, res, next) => {
+    if (req.cookies.user) {
+        const now = new Date().getTime();
+        const cookieExpireTime = req.cookies.user;
+
+        if (now < cookieExpireTime) {
+            // Se il cookie è ancora valido, chiamiamo next() per procedere alla route successiva
+            next();
+            return;
+        }
+    }
+
+    // Se il cookie è scaduto o non è presente, reindirizziamo l'utente alla pagina di login
+    res.redirect("/login");
+};
+
+// Utilizzo del middleware per tutte le route che richiedono la verifica del cookie
+app.use(['/home', '/auction'], checkCookieValidity);
 
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, "html/login.html"));
@@ -42,6 +73,12 @@ app.get('/login', (req, res) => {
 app.get('/signup', (req, res) => {
     res.sendFile(path.join(__dirname, "html/signUp.html"));
 });
+
+app.get('/home', (req, res) => {
+    res.sendFile(path.join(__dirname, "html/home.html"));
+});
+
+
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);

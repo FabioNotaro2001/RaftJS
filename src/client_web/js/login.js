@@ -31,7 +31,7 @@ $(document).ready(function () {
             if(success!=="success"){
                 addAlert("alert","alert-danger","Errore nella login.","");
             } else {
-               // window.location.href="/dafaaaaaaaaare";
+               window.location.href="/home";
             }
         })
         .fail(function (response) {

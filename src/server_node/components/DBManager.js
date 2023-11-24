@@ -1,5 +1,35 @@
 const mysql = require('mysql2/promise');
 
+export class StatusResults {
+    /**
+     * 
+     * @param {Boolean} success 
+     * @param {String} info 
+     */
+    constructor(success, info) {
+        /** @type {Boolean} */
+        this.success = success;
+        /** @type {String} */
+        this.info = info;
+    }
+
+    /**
+     * 
+     * @param {String} info 
+     */
+    static success(info) {
+        return new StatusResults(true, info);
+    }
+
+    /**
+     * 
+     * @param {String} info 
+     */
+    static failure(info) {
+        return new StatusResults(false, info);
+    }
+}
+
 export class DBManager {
     /**
      * Constructor for the DBManager class.
@@ -60,82 +90,135 @@ export class DBManager {
      * @param {String} passwordParameter The password of the new user.
      */
     // TODO: Create methods as API that execute specific queries.
-    queryAddNewUser(usernameParameter, passwordParameter){
-        // execute will internally call prepare and query
-        this.connection.execute(
-            'INSERT INTO Users (Username, Password) VALUES (?, ?)',
-            [usernameParameter, passwordParameter]
-        );
-        
+    async queryAddNewUser(usernameParameter, passwordParameter) {
+        try {
+            /** @type {mysql.ResultSetHeader} */
+            const results = this.connection.execute(
+                'INSERT INTO Users (Username, Password) VALUES (?, ?)',
+                [usernameParameter, passwordParameter]
+            );
+
+            return results.insertId;
+        } catch (err) {
+            return null;
+        }
+
     }
 
     /**
      * Adds a new bid to the database.
-     * @param {String} id The bid ID.
      * @param {String} userMaker The user making the bid.
-     * @param {String} auctionId The ID of the auction.
+     * @param {Number} auctionId The ID of the auction.
      * @param {Number} value The bid value.
-     * @param {Boolean} isWinner Indicates if the bid is the winning bid.
-     * @returns {Boolean} Returns true if the auction is not closed, otherwise false.
+     * @returns The result of the insert plus a description.
      */
-    // FIXME: check if value is > lastBid for that auction and value > startingPrice of the auction.
     // FIXME: add the constraint that the creator of the auction cannot make a bid for it
-    async queryAddNewBid(id, userMaker, auctionId, value, isWinner){
-        if(await this.checkAuctionNotAlreadyClosed(auctionId)){
-            this.connection.execute(
-                'INSERT INTO Bids (Id, UserMaker, Auction, Value, Time, IsWinner) VALUES (?, ?, ?, ?, ?, ?)',
-                [id, userMaker, auctionId, value, new Date().toISOString(), isWinner]
-            );
-            return true;
+    async queryAddNewBid(userMaker, auctionId, value) {
+        try {
+            let auction = await this.getAuctionInfo(auctionId);
+            if (!auction.closed) {
+                if (userMaker == auction.creator) {
+                    return StatusResults.failure('Auction creator cannot bid in the auction.');
+                }
+
+                if (value < auction.startingPrice || (auction.highestBid && value <= auction.highestBid)) {
+                    return StatusResults.failure('Insufficient bid price.');
+                }
+
+                this.connection.execute(
+                    'INSERT INTO Bids (UserMaker, AuctionId, Value, Time) VALUES (?, ?, ?, ?)',
+                    [userMaker, auctionId, value, new Date().toISOString()]
+                );
+                StatusResults.success('Bid added.');
+            }
+            return StatusResults.failure('Auction closed.');
+        } catch (err) {
+            return StatusResults.failure('Failed to add bid.');
         }
-        return false;
     }
 
     /**
-     * Checks if an auction is not already closed.
+     * Retrieves key information on a certain auction.
      * @param {String} auctionId The ID of the auction.
-     * @returns {Promise<Boolean>} Returns a promise that resolves if an auction is close.
+     * @returns The auction's information.
      */
-    async checkAuctionNotAlreadyClosed(auctionId){
-        return await this.connection.execute(
-            'SELECT ClosingDate FROM Auctions WHERE Id = ?',
+    async getAuctionInfo(auctionId) {
+        let [rows, _] = await this.connection.execute(
+            `SELECT TOP 1 a.UserMaker as um, a.StartingPrice as sp, a.ClosingDate as cd, b.Value as hv FROM Auctions a INNER JOIN Bid b
+                ON b.AuctionId = a.Id
+             WHERE Id = ?
+             ORDER BY b.Value DESC`,
             [auctionId]
-        ).then(([rows, fields]) => {
-            if(rows.length > 0){
-                return rows[0].ClosingDate;
-            }
-            return false;
-        });
+        );
+
+        if (rows.length > 0) {
+            let auct = rows[0];
+            return {
+                /** @type {String} */
+                creator: auct.um,
+                /** @type {Number} */
+                startingPrice: auct.sp,
+                /** @type {Boolean} */
+                closed: auct.cd != null,
+                /** @type {Number | null} */
+                highestBid: auct.hv
+            };
+        }
+        return null;
     }
-    
+
     /**
      * Adds a new auction to the database.
-     * @param {String} id The auction ID.
+     * @param {String} userMaker The user creating the auction.
+     * @param {Date} openingDate Date of the start of the auction.
      * @param {String} objectName The name of the auctioned object.
      * @param {String} objectDescription The description of the auctioned object.
      * @param {Number} startingPrice The starting price of the auction.
-     * @param {String} userMaker The user creating the auction.
+     * @returns The id of the newly inserted auction, null if unsuccessful.
      */
-    queryAddNewAuction(id, objectName, objectDescription, startingPrice, userMaker){
-        let now = new Date().toISOString();
-        this.connection.execute(
-            'INSERT INTO Auctions (Id, OpeningDate, ClosingDate, ObjectName, ObjectDescription, StartingPrice, UserMaker) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [id, new Date().toISOString(), null, objectName, objectDescription, startingPrice, userMaker]
-        );
+    async queryAddNewAuction(userMaker, openingDate, objectName, objectDescription, startingPrice) {
+        try {
+            /** @type {mysql.ResultSetHeader} */
+            const results = await this.connection.execute(
+                'INSERT INTO Auctions (UserMaker, OpeningDate, ClosingDate, ObjectName, ObjectDescription, StartingPrice, WinnerBid) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [userMaker, openingDate.toISOString(), null, objectName, objectDescription, startingPrice, null]
+            );
+
+            return results.insertId;
+        } catch (err) {
+            return null;
+        }
     }
 
     /**
      * Checks if a given username and password match a user in the database.
      * @param {String} username The username.
      * @param {String} password The password.
-     * @returns {Promise<Boolean>} Returns a promise that resolves to true if the login is successful, otherwise false.
+     * @returns Returns a promise that resolves to true if the login is successful, otherwise false.
      */
-    async queryForLogin(username, password){
+    async queryForLogin(username, password) {
         const [rows, fields] = await this.connection.execute(
             'SELECT 1 AS Success FROM Users WHERE Username = ? AND Password = ?',
             [username, password]
         );
         return rows.length > 0;
+    }
+
+    async queryCloseAuction(auctionId, closingDate) {
+        try {
+            /** @type {mysql.ResultSetHeader} */
+            let results = await this.connection.execute(
+                'UPDATE Auctions SET ClosingDate = ? WHERE Id = ?',
+                [closingDate, auctionId]
+            );
+
+            if (results.affectedRows > 0) {
+                return StatusResults.success('Succesfully closed auction.');
+            }
+            return StatusResults.failure('Failed to close auction.');
+        } catch (err) {
+            return StatusResults.failure('Error while updating auction.');
+        }
     }
 
     // TODO: query to close an auction (set closingTime to now) --> as consequence if present mark the winner bid

@@ -1,10 +1,9 @@
 /**
  * Enumerator for types of commands.
  */
-const CommandType = Object.freeze({
-    CREATETABLE : "createtable",
-    REMOVETABLE : "removetable",
-    INSERT : "insert",
-    DELETE : "delete",
-    UPDATE : "update"
+export const CommandType = Object.freeze({
+    NEW_USER: "new_user",
+    NEW_AUCTION: "new_auction",
+    CLOSE_AUCTION: "close_auction",
+    NEW_BID: "new_bid",
 });

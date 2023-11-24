@@ -5,9 +5,10 @@ import { RPCType } from "../enums/RPCType.js";
 import { AppendEntriesParameters, RequestVoteParameters, SnapshotParameters } from "./RPCParameters.js";
 import { State } from "../enums/State.js";
 import { RPCManager } from "./RPCManager.js";
-import { LogRecord } from "./Log.js";
+import { LogRecord, AuctionCreateData, AuctionCloseData, UserCreateData, BidCreateData } from "./Log.js";
 import { error } from "console";
 import { DBManager } from "./DBManager.js";
+import { CommandType } from "../enums/CommandType.js";
 
 // const MAX_ENTRIES_IN_REQUEST = 10;  // Max number of request that can be put together in a single request.
 
@@ -60,7 +61,7 @@ export class RaftNode {
         this.minElectionDelay = minElectionDelay;
         /** @type {Number} */
         this.heartbeatTimeout = heartbeatTimeout
-        /** @type {any} */
+        /** @type {DBManager} */
         this.dbManager = new DBManager(hostForDB, userForDB, passwordForDB, databaseName);
         /**
          * Leader-only.
@@ -171,6 +172,8 @@ export class RaftNode {
                 accepted = true;
             });
 
+            sock.emitWithAck().then
+
             // sock.on("shutdown", () => {
             //     shutdown = true;
             // });
@@ -190,6 +193,12 @@ export class RaftNode {
             this.sockets.set(id, sock);
             this.socketToNodeId.set(sock.id, id);
         });
+
+        // TODO: addizionale server che attende per le richieste dei server web
+        // TODO: ES di attesa (socket collegato): socket.on("adduser", (args, callback) => *funzione che gestisce la richiesta*)
+        // TODO: ricevuta una richiesta, il nodo (che è leader) salva nel log un nuovo record che include il callback e avvia il protocollo
+        // TODO: una volta che riceve conferma del commit del record, lo salva nel database e nel callback passa ciò che viene restituito dai metodi del dbManager
+
 
         this.debugLog("Node started.");
 
@@ -217,6 +226,51 @@ export class RaftNode {
         this.socketToNodeId.clear();
 
         this.debugLog("Node stopped");
+    }
+
+    applyLogEntry(index) {
+        let logEntry = this.log.at(index);
+        
+        if (logEntry) {
+            let res = null;
+            switch (logEntry.commandType) {
+                case CommandType.NEW_USER: {
+                    /** @type {UserCreateData} */
+                    let data = logEntry.logData;
+
+                    res = this.dbManager.queryAddNewUser(data.username, data.password);  
+                    break;
+                }
+                case CommandType.NEW_AUCTION: {
+                    /** @type {AuctionCreateData} */
+                    let data = logEntry.logData;
+
+                    res = this.dbManager.queryAddNewAuction(data.user, data.startDate, data.objName, data.objDesc, data.startPrice);
+                    break;
+                }
+                case CommandType.CLOSE_AUCTION: {
+                    /** @type {AuctionCloseData} */
+                    let data = logEntry.logData;
+    
+                    res = this.dbManager.queryCloseAuction(data.auctionId, data.closingDate);
+                    break;
+                }
+                case CommandType.NEW_BID: {
+                    /** @type {BidCreateData} */
+                    let data = logEntry.logData;
+
+                    res = this.dbManager.queryAddNewBid(data.user, data.auctionId, data.value);
+                    break;
+                }
+                default: {
+                    throw new error("Unknown command type '" + logEntry.commandType + "'");
+                }
+            }
+
+            logEntry.callback(res); // Fulfill promise to web server by sending another promise.
+        } else {
+            throw new error("Log entry at index " + index + "is undefined.");
+        }
     }
 
     /**
@@ -277,11 +331,13 @@ export class RaftNode {
                 }
                 
                 if (args.leaderCommit > this.commitIndex) {
-                    // TODO: handle commits, requires db manager.
-                    // Committare i record che sono da this.commitIndex+1 a lastIndex estremi inclusi.
+                    for (let i = this.commitIndex + 1; i <= lastIndex; i++) {   // Applies log entries to the database.
+                        this.applyLogEntry(i);
+                    }
+
                     this.debugLog("Committed %d log entries to database.", args.leaderCommit - this.commitIndex);
                     let lastIndex = args.prevLogIndex + args.entries.length;
-                    this.commitIndex =  lastIndex < args.leaderCommit ? lastIndex: args.leaderCommit ;
+                    this.commitIndex = lastIndex < args.leaderCommit ? lastIndex: args.leaderCommit ;
                 }
 
                 this.rpcManager.sendReplicationResponse(sender, this.currentTerm, true, this.commitIndex);
@@ -308,6 +364,16 @@ export class RaftNode {
                         this.rpcManager.sendReplicationTo(sender, this.currentTerm, prevLogIndex, prevLogTerm, missingEntries, this.commitIndex);
                         this.debugLog("Received successful \"%s\" response -> responded.", RPCType.APPENDENTRIES);
                         this.resetHeartbeatTimeout(args.senderId);
+                    } else {
+                        // TODO: check if some uncommitted log entries are now committed, then commit log entries and send the commit confirmation.
+                        //  To find the index, order the values of this.matchIndex and get the largest index value
+                        //  if more than this.clusterSize/2 + 1 nodes have index >= than that index, then it is the index of the last committed entry, 
+                        //  otherwise get the next index from the ordered list and repeat.
+                        
+                        // for(....) {
+                        //     this.applyLogEntry(...);
+                        // }
+                        // *send commit confirmation*
                     }
                 } else {
                     this.debugLog("Received unsuccessful \"%s\" response -> ignored.", RPCType.APPENDENTRIES);
@@ -579,5 +645,3 @@ export class RaftNode {
         }
     }
 }
-
-console.log("OOOOOOOO");

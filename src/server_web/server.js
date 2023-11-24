@@ -16,6 +16,12 @@ app.use("/js/",express.static(path.join(__dirname,"js")));
 
 app.post("/createuser", (req, res) => {
     // TODO Aggiunta dell'utente al DB se ha successo restituisci 200 se no l'errore.
+    res.sendStatus(201);
+});
+
+app.post("/loginuser", (req, res) => {
+    // TODO Verifica i dati inseriti dall'utente nel database e restituire la risposta settando in tal caso il cookie.
+    console.log(req.body);
     res.cookie("user", "1", {maxAge:60000})
     res.sendStatus(201);
 });

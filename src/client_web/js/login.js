@@ -14,23 +14,24 @@ function getFormData(id_form) {
 $(document).ready(function () {
     $("form").submit(function (event) {
         event.preventDefault();
-        const datas = getFormData("form_sign");
+        const datas = getFormData("form_login");
 
         // Converti l'oggetto in una stringa JSON
         const jsonData = JSON.stringify(datas);
 
         $.ajax({
             type: "POST",
-            url: "/createuser",
+            url: "/loginuser",
             data: jsonData,
             processData: false,
             contentType: "application/json"
         })
         .done(function (data, success, response) {
+            console.log(success);
             if(success!=="success"){
-                addAlert("alert","alert-danger","Errore nell'iscrizione.","");
+                addAlert("alert","alert-danger","Errore nella login.","");
             } else {
-                window.location.href="/login";
+               // window.location.href="/dafaaaaaaaaare";
             }
         })
         .fail(function (response) {

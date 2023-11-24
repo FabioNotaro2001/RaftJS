@@ -21,16 +21,16 @@ app.post("/createuser", (req, res) => {
 
 app.post("/loginuser", (req, res) => {
     // TODO Verifica i dati inseriti dall'utente nel database e restituire la risposta settando in tal caso il cookie.
-    // Imposta il cookie con il timestamp di scadenza
+    // Sets the cookie with the expiration timestamp.
     const expireTime = new Date().getTime() + 86400000; // 1 giorno
     res.cookie("user", expireTime, { maxAge:  86400000});
     res.sendStatus(201);
 });
 
 app.post("/logoutuser", (req, res) => {
-    // Verifica se il cookie "user" è presente nella richiesta
+    // Checks whether the "user" cookie is present in the request.
     if (req.cookies && req.cookies.user) {
-        // Elimina il cookie
+        // Delete cookie.
         res.clearCookie("user");
         res.sendStatus(200);
     } else {
@@ -46,24 +46,24 @@ app.get('/', (req, res) => {
     }
 });
 
-// Middleware per verificare la validità del cookie.
+// Middleware to check the validity of the cookie.
 const checkCookieValidity = (req, res, next) => {
     if (req.cookies.user) {
         const now = new Date().getTime();
         const cookieExpireTime = req.cookies.user;
 
         if (now < cookieExpireTime) {
-            // Se il cookie è ancora valido, chiamiamo next() per procedere alla route successiva
+            // If the cookie is still valid, we call next() to proceed to the next route.
             next();
             return;
         }
     }
 
-    // Se il cookie è scaduto o non è presente, reindirizziamo l'utente alla pagina di login
+    // If the cookie has expired or is not present, we redirect the user to the login page.
     res.redirect("/login");
 };
 
-// Utilizzo del middleware per tutte le route che richiedono la verifica del cookie
+// Using middleware for all routes that require cookie verification.
 app.use(['/home', '/auction'], checkCookieValidity);
 
 app.get('/login', (req, res) => {
@@ -77,8 +77,6 @@ app.get('/signup', (req, res) => {
 app.get('/home', (req, res) => {
     res.sendFile(path.join(__dirname, "html/home.html"));
 });
-
-
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);

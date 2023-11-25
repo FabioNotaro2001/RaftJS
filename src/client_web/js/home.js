@@ -1,42 +1,12 @@
+
+// TODO Parte di prova da cancellare dopo.
+let aste = [
+    { partenza: 200, prezzo: 200, oggetto: "Lumaca" },
+    { partenza:100, prezzo: null, oggetto: "Patata" }
+];
+
 $(document).ready(function () {
-    // TODO Prendo tutte le aste che ci sono e le stampo. Necessito delle aste.
-    const aste = [
-        { partenza: 200, prezzo: 200, oggetto: "Lumaca" },
-        { partenza:100, prezzo: null, oggetto: "Patata" }
-    ];
-    
-    let html = '<h1>Elenco Aste</h1>';
-    let n = 1;
-    for(asta of aste){
-        let p 
-        if(asta.prezzo == null){
-            p = asta.partenza;
-        } else {
-            p = asta.prezzo;
-        }
-        html+=`
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-8">
-                        <h2 class="card-title fw-bold">Asta ${n}</h2>
-                        <p class="card-text">Articolo: ${asta.oggetto}</p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <p class="fw-bold">Offerta corrente: ${p}€</p>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12 text-end">
-                        <button class="btn btn-primary" onclick="">Dettagli</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        `;
-        n++;
-    }
-    $("#cont_aste").html(html);
+    printAllAuctions();
 
     $("#logout").on("click", function() {
         const datas = new getFormData();
@@ -64,13 +34,13 @@ $(document).ready(function () {
 
 
     $("form").submit(function (event) {
-        event.preventDefault();
-        const datas = getFormData("form_login");
+        event.preventDefault(); 
+        const datas = getFormData("form_ast");
         const jsonData = JSON.stringify(datas);
-
+        console.log(jsonData);
         $.ajax({
             type: "POST",
-            url: "/loginuser",
+            url: "/addAuction",
             data: jsonData,
             processData: false,
             contentType: "application/json"
@@ -78,40 +48,73 @@ $(document).ready(function () {
         .done(function (data, success, response) {
             console.log(success);
             if(success!=="success"){
-                addAlert("alert","alert-danger","Errore nella login.","");
+                addAlert("alert","alert-danger","Errore nell'inserimento dell'asta.","");
             } else {
-                window.location.href="/home";
+                addAlert("alert","alert-success","Asta inserita con successo!","");
+                //TODO elimina solo la riga sottostante che è di prova.
+                aste.push({ partenza: datas.initialPrice, prezzo: null, oggetto: datas.nameObject });
+                printAllAuctions();
             }
         })
         .fail(function (response) {
             console.log(response);
         });
+        $("#myModal").modal('toggle');
+    });
+
+    $("#clsModal").on("click", function() {
+        $("#myModal").modal('toggle');
+    });
+    
+    $("#openModalButton").on("click", function() {
+        $("#myModal").modal('toggle');
     });
 });
 
-function addAlert(id_append,classe,message,time_remove)
-{
-    
-    let alert = $('<div class="alert '+classe+'">' + '<button type="button" class="close" data-dismiss="alert" onClick="$(this).parent().remove()">' +
-    '&times;</button>' + message + '</div>');
+function printAllAuctions(){
+    // TODO Prendo tutte le aste che ci sono e le stampo. Necessito delle aste.
+    // $.ajax({
+    //     type: "POST",
+    //     url: "/getAllAuctions",
+    //     data: jsonData,
+    //     processData: false,
+    //     contentType: "application/json"
+    // })
+    // .done(function (data, success, response) {
+    //     //TODO Aste=data
+    // })
+    // .fail(function (response) {
+    //     console.log(response);
+    // });
 
-    if(time_remove=='x')
-        setTimeout(function () { alert.remove(); }, 5000);
-    else if(time_remove!='' && time_remove!=undefined)
-        setTimeout(function () { alert.remove(); }, time_remove);
 
-    $('#'+id_append).html(alert);
-}
-
-function getFormData(id_form) {
-    const formData = {};
-
-    if ($("#" + id_form).is("form")) {
-        let form = $("#" + id_form);
-        let unindexed_array = form.serializeArray();
-        unindexed_array.forEach(element => {
-            formData[element.name] = element.value;
-        });
+    let html = '';
+    for(asta of aste){
+        let p 
+        if(asta.prezzo == null){
+            p = asta.partenza;
+        } else {
+            p = asta.prezzo;
+        }
+        html+=`
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h2 class="card-title fw-bold">Asta per ${asta.oggetto}</h2>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <p class="fw-bold">Offerta corrente: ${p}€</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 text-end">
+                        <button class="btn btn-primary" onclick="">Dettagli</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
     }
-    return formData;
+    $("#cont_aste").html(html);
 }

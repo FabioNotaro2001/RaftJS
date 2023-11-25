@@ -13,6 +13,7 @@ app.use(bodyParser.json());
 const __dirname = path.resolve(path.dirname("../client_web/html"));
 app.use("/css/",express.static(path.join(__dirname,"css")));
 app.use("/js/",express.static(path.join(__dirname,"js")));
+app.use("/res/",express.static(path.join(__dirname,"res")));
 
 app.post("/createuser", (req, res) => {
     // TODO Aggiunta dell'utente al DB se ha successo restituisci 200 se no l'errore.
@@ -36,6 +37,16 @@ app.post("/logoutuser", (req, res) => {
     } else {
         res.sendStatus(200);
     }
+});
+
+app.post("/addAuction", (req, res) => {
+    // TODO Fare l'aggiunta della nuova asta.
+    res.sendStatus(201);
+});
+
+app.post("/getAllAuctions", (req, res) => {
+    // TODO Prendere tutte le aste dal database.
+    res.sendStatus(201);
 });
 
 app.get('/', (req, res) => {

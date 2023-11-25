@@ -624,13 +624,13 @@
     }
   }
   
-  h1 {
+  #title {
     font-style: italic;
     font-weight: bold;
     font-variant: all-petite-caps;
     margin: 6% 0 2% 0;
   }
-  
+
   a {
     text-decoration: none;
     color: inherit;
@@ -675,6 +675,10 @@
   textarea {
     background: #fff;
   }
+
+  #dinamicMain{
+    margin-bottom: 10%;
+  }
   
   h3 {
     font-size: initial;
@@ -705,5 +709,9 @@
   
   footer .footer-info {
     background-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .navbar{
+    padding: 0;
   }
   /*# sourceMappingURL=style.css.map */

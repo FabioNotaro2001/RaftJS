@@ -45,8 +45,7 @@ export class DBManager {
 
         // Configure database connection.
         this.connection = null;
-
-        // TODO: if this dbmanager handles the first connection, then delete all tables content.
+        this.firstConnection = true;
     }
 
     /**
@@ -59,6 +58,16 @@ export class DBManager {
             password: this.password, // Password.
             database: this.database
         });
+
+        if (this.firstConnection) {
+            // Delete all tables contents if this is the first connection.
+            // This is caused by the fact that at the beginning the log must be empty, so the database cannot contain any data, otherwise this can led to an inconsistency.
+            this.connection.query("TRUNCATE TABLE Users");
+            this.connection.query("TRUNCATE TABLE Bids");
+            this.connection.query("TRUNCATE TABLE Auctions");
+
+            this.firstConnection = false;
+        }
 
         // Connect to the database,
         await this.connection.connect((err) => {
@@ -89,7 +98,7 @@ export class DBManager {
      * @param {String} usernameParameter The username of the new user.
      * @param {String} passwordParameter The password of the new user.
      */
-    // TODO: Create methods as API that execute specific queries.
+
     async queryAddNewUser(usernameParameter, passwordParameter) {
         try {
             /** @type {mysql.ResultSetHeader} */
@@ -112,7 +121,6 @@ export class DBManager {
      * @param {Number} value The bid value.
      * @returns The result of the insert plus a description.
      */
-    // FIXME: add the constraint that the creator of the auction cannot make a bid for it
     async queryAddNewBid(userMaker, auctionId, value) {
         try {
             let auction = await this.getAuctionInfo(auctionId);
@@ -221,11 +229,100 @@ export class DBManager {
         }
     }
 
-    // TODO: query to close an auction (set closingTime to now) --> as consequence if present mark the winner bid
-    // TODO: function clearAllTables() that delete the contents of all tables
-    // TODO: query to view all open auctions
-    // TODO: query to view all auction of a specific user (the logged one)
-    // TODO: query to view all auction that the logged user has participated to
-    // TODO: query to view last n bids given a specific auction
+    //TODO: Think about maybe include the highest bid instead of the sp (if exists the highest bid).
+    /**
+     * @returns {Promise<{
+     * id : Number, 
+     * name : String,
+     * desc : String,
+     * date : String,
+     * sp : Number
+     * }[] | null>}
+     */
+    async queryViewAllOpenAuctions() {
+        try {
+            let results = [];
+            const [rows, fields] = await this.connection.execute(
+                'SELECT Id AS id, ObjectName AS name, ObjectDescription AS desc, OpeningDate AS date FROM Actions WHERE ClosingDate IS NULL',
+            );
 
+            return rows;
+        } catch (err) {
+            return null;
+        }
+    }
+
+    /**
+     * @returns {Promise<{
+    * id : Number, 
+    * name : String,
+    * desc : String,
+    * date : String,
+    * sp : Number
+    * }[] | null>}
+    */
+    async queryViewAllAuctionsOfAUser(userId) {
+        try {
+            let results = [];
+            const [rows, fields] = await this.connection.execute(
+                'SELECT Id AS id, ObjectName AS name, ObjectDescription AS desc, OpeningDate AS date, StartingPrice AS sp FROM Actions WHERE UserMaker = ?',
+                [userId]
+            );
+
+            return rows;
+        } catch (err) {
+            return null;
+        }
+    }
+
+    /**
+      * @returns {Promise<{
+    * id : Number, 
+    * name : String,
+    * desc : String,
+    * date : String,
+    * sp : Number
+    * }[] | null>}
+    */
+    async queryViewAllAuctionsParticipatedByUser(userId) {
+        try {
+            let results = [];
+            const [rows, fields] = await this.connection.execute(
+                `SELECT a.Id AS id, a.ObjectName AS name, a.ObjectDescription AS desc, a.OpeningDate AS date, a.StartingPrice as sp 
+                FROM Auctions a INNER JOIN Bids b
+                ON b.AuctionId = a.Id AND a.UserMaker = ?`,
+                [userId]
+            );
+
+            return rows;
+        } catch (err) {
+            return null;
+        }
+    }
+
+    /**
+     * 
+     * @param {Number} auctionId 
+     * @param {Number} n 
+     * @returns {Promise<{
+    * bidId : Number, 
+    * val : Number,
+    * time : String
+    * }[] | null>}
+     */
+    async queryViewNLatestBidsInAuction(auctionId, n){
+        try{
+            let results = [];
+            const [rows, fields] = await this.connection.execute(
+                `SELECT TOP ?  Id as bidId, UserMaker as user, Value as val, Time as time
+                FROM Bids
+                WHERE AuctionId = ?`,
+                [n, auctionId]
+            );
+
+            return rows;
+        } catch(err){
+            return null;
+        }
+    }
 }

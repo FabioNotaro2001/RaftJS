@@ -44,7 +44,7 @@ export class RaftNode {
         /** @type {Number} */
         this.votesGathered = 0;
         /** @type {LogRecord[]} */
-        this.log = [];      
+        this.log = [];
         /** @type {Number} */
         this.commitIndex = -1;
         /** @type {Number} */
@@ -90,9 +90,18 @@ export class RaftNode {
         this.heartbeatTimeouts = new Map();
 
         /** @type {HTTPServer | null} */
-        this.httpServer = null;
+        this.protocolHttpServer = null;
         /** @type {Server | null} */
-        this.server = null;
+        this.protocolServer = null;
+
+        /** @type {HTTPServer | null} */
+        this.webHttpServer = null;
+
+        /** @type {Server | null} */
+        this.webServer = null;
+
+
+
 
         /** 
          * Maps the socket id to the corresponding node id. 
@@ -132,12 +141,17 @@ export class RaftNode {
         // Connect the node to the database through its DBmanager.
         this.dbManager.connect();
 
-        // Start node server.
-        this.httpServer = createServer();
-        this.server = new Server(this.httpServer);
+        // Start node servers.
+        this.protocolHttpServer = createServer();
+        this.protocolServer = new Server(this.protocolHttpServer);
+        this.webHttpServer = createServer();
+        this.webServer = new Server(this.protocolHttpServer);
+
+
+
 
         let serverNode = this;
-        this.server.on("connection", socket => {    // Handle connections to this node.
+        this.protocolServer.on("connection", socket => {    // Handle connections to this node.
             if (otherNodes.get(socket.handshake.address) != undefined) {
                 socket.emit("accept");
             } else {
@@ -152,7 +166,15 @@ export class RaftNode {
             serverNode.heartbeatTimeouts.set(id, null);
         });
 
-        this.httpServer.listen(11111);
+        this.webServer.on("connection", socket => {    // Handle connections to this node.
+            socket.on(CommandType.NEW_USER, (args, callback) => this.onRequest(CommandType.NEW_USER, args, callback));
+            socket.on(CommandType.NEW_AUCTION, (args, callback) => this.onRequest(CommandType.NEW_AUCTION, args, callback));
+            socket.on(CommandType.NEW_BID, (args, callback) => this.onRequest(CommandType.NEW_BID, args, callback));
+            socket.on(CommandType.CLOSE_AUCTION, (args, callback) => this.onRequest(CommandType.CLOSE_AUCTION, args, callback));
+        });
+
+        this.protocolHttpServer.listen(11111);
+        this.webHttpServer.listen(11112);
 
         // Connect to other nodes.
         this.otherNodes.forEach((host, id) => {
@@ -194,12 +216,6 @@ export class RaftNode {
             this.socketToNodeId.set(sock.id, id);
         });
 
-        // TODO: addizionale server che attende per le richieste dei server web
-        // TODO: ES di attesa (socket collegato): socket.on("adduser", (args, callback) => *funzione che gestisce la richiesta*)
-        // TODO: ricevuta una richiesta, il nodo (che è leader) salva nel log un nuovo record che include il callback e avvia il protocollo
-        // TODO: una volta che riceve conferma del commit del record, lo salva nel database e nel callback passa ciò che viene restituito dai metodi del dbManager
-
-
         this.debugLog("Node started.");
 
         this.waitForLeaderTimeout();    // Waits before attempting to start the first ever election.
@@ -218,9 +234,9 @@ export class RaftNode {
         // Disconnect the node to the database through its DBmanager.
         this.dbManager.disconnect();
 
-        this.httpServer.close();
-        this.server.close();
-        this.server.disconnectSockets(true);
+        this.protocolHttpServer.close();
+        this.protocolServer.close();
+        this.protocolServer.disconnectSockets(true);
 
         this.sockets.clear();
         this.socketToNodeId.clear();
@@ -230,7 +246,7 @@ export class RaftNode {
 
     applyLogEntry(index) {
         let logEntry = this.log.at(index);
-        
+
         if (logEntry) {
             let res = null;
             switch (logEntry.commandType) {
@@ -238,7 +254,7 @@ export class RaftNode {
                     /** @type {UserCreateData} */
                     let data = logEntry.logData;
 
-                    res = this.dbManager.queryAddNewUser(data.username, data.password);  
+                    res = this.dbManager.queryAddNewUser(data.username, data.password);
                     break;
                 }
                 case CommandType.NEW_AUCTION: {
@@ -251,7 +267,7 @@ export class RaftNode {
                 case CommandType.CLOSE_AUCTION: {
                     /** @type {AuctionCloseData} */
                     let data = logEntry.logData;
-    
+
                     res = this.dbManager.queryCloseAuction(data.auctionId, data.closingDate);
                     break;
                 }
@@ -329,7 +345,7 @@ export class RaftNode {
                     });
                     this.debugLog("Added %d entries to log", args.entries.length);
                 }
-                
+
                 if (args.leaderCommit > this.commitIndex) {
                     for (let i = this.commitIndex + 1; i <= lastIndex; i++) {   // Applies log entries to the database.
                         this.applyLogEntry(i);
@@ -337,7 +353,7 @@ export class RaftNode {
 
                     this.debugLog("Committed %d log entries to database.", args.leaderCommit - this.commitIndex);
                     let lastIndex = args.prevLogIndex + args.entries.length;
-                    this.commitIndex = lastIndex < args.leaderCommit ? lastIndex: args.leaderCommit ;
+                    this.commitIndex = lastIndex < args.leaderCommit ? lastIndex : args.leaderCommit;
                 }
 
                 this.rpcManager.sendReplicationResponse(sender, this.currentTerm, true, this.commitIndex);
@@ -364,16 +380,21 @@ export class RaftNode {
                         this.rpcManager.sendReplicationTo(sender, this.currentTerm, prevLogIndex, prevLogTerm, missingEntries, this.commitIndex);
                         this.debugLog("Received successful \"%s\" response -> responded.", RPCType.APPENDENTRIES);
                         this.resetHeartbeatTimeout(args.senderId);
-                    } else {
-                        // TODO: check if some uncommitted log entries are now committed, then commit log entries and send the commit confirmation.
-                        //  To find the index, order the values of this.matchIndex and get the largest index value
-                        //  if more than this.clusterSize/2 + 1 nodes have index >= than that index, then it is the index of the last committed entry, 
-                        //  otherwise get the next index from the ordered list and repeat.
-                        
-                        // for(....) {
-                        //     this.applyLogEntry(...);
-                        // }
-                        // *send commit confirmation*
+                    } 
+
+                    // Server applies to the database the newly committed entries.
+                    let sortedIndexes = [...this.matchIndex.values()].sort();
+                    let oldCommitIndex = this.commitIndex;
+                    
+                    for(let i = sortedIndexes.length - 1; i >= 0; i--){
+                        if(sortedIndexes.filter(index => index >= i).length > Math.floor(this.clusterSize / 2)){
+                            this.commitIndex = sortedIndexes[i];
+                            break;
+                        }
+                    }
+                    
+                    for(let i = oldCommitIndex + 1; i <= this.commitIndex; i++) {
+                        this.applyLogEntry(i);
                     }
                 } else {
                     this.debugLog("Received unsuccessful \"%s\" response -> ignored.", RPCType.APPENDENTRIES);
@@ -637,6 +658,40 @@ export class RaftNode {
             });
             this.heartbeatTimeouts.clear();
         }
+    }
+
+    // Functions that handle the various requests that can be made on the database.
+    // For every request add it on the log,  check the match index and reset the heartbeat timeout.
+    onRequest(commandType, args, callback) {
+        let prevLogIndex = this.log.length - 1;
+        let prevLogTerm = this.log[-1] ? this.log[-1].term : null;
+
+        switch (commandType) {
+            case CommandType.NEW_USER: {
+                this.log.push(new LogRecord(this.currentTerm, commandType, new UserCreateData(args.username, args.password), callback));
+                break;
+            }
+            case CommandType.NEW_AUCTION: {
+                this.log.push(new LogRecord(this.currentTerm, commandType, new AuctionCreateData(args.user, args.startDate, args.objName, args.objDesc, args.startPrice), callback));
+                break;
+            }
+            case CommandType.NEW_BID: {
+                this.log.push(new LogRecord(this.currentTerm, commandType, new BidCreateData(args.user, args.auctionId, args.value), callback));
+                break;
+            }
+            case CommandType.CLOSE_AUCTION: {
+                this.log.push(new LogRecord(this.currentTerm, commandType, new AuctionCloseData(args.auctionId, args.closingDate), callback));
+                break;
+            }
+        }
+
+        let node = this;
+        this.matchIndex.forEach((i, nodeId) => {
+            if (i == node.commitIndex) {
+                this.rpcManager.sendReplicationTo(node.sockets.get(nodeId), node.currentTerm, prevLogIndex, prevLogTerm, [this.log[-1]], node.commitIndex);
+                this.resetHeartbeatTimeout(nodeId);
+            }
+        });
     }
 
     debugLog(message, ...optionalParams) {

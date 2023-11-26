@@ -14,20 +14,86 @@
     </head>
     <header>
         <nav class="navbar navbar-expand-md navbar-dark bg-dark">
-            <div class="collapse navbar-collapse dual-collapse2">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <button id="logout" class="btn btn-dark">Logout</button>
-                    </li>
-                </ul>
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <img src="/res/logo.png" alt="Logo" width="50" height="50">
+                </a>
+                <div class="collapse navbar-collapse dual-collapse2">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <button id="logout" class="btn btn-dark">Logout</button>
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </nav>
+        </nav>        
     </header>
-    <main class="container mt-5">
-        <div id="alert" role="alert"></div>
-        <section id="cont_aste">
+    <main id="dinamicMain" class="container mt-5">
+        <div id="title" class="row justify-content-between">
+            <div class="col">
+                <h1>Asta</h1>
+            </div>
+            <div id="alert" class="my-2" role="alert"></div>
+        </div>
+        <h2>Informazioni</h2>
+        <section id="ogg_vinc" class="my-2">
         </section>
-    </main>    
+        <div class="row justify-content-between">
+            <div class="col">
+                <h2>Offerte</h2>
+            </div>
+            <div class="col-auto align-self-center">
+                <button class="btn btn-primary" id="openModalButton">Aggiungi Offerta</button>
+            </div>
+        </div>
+        <section>
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Utente</th>
+                                        <th scope="col">Data</th>
+                                        <th scope="col">Offerta</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cont_aste">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h2 class="modal-title" id="exampleModalLabel">Nuova Offerta</h2>
+            <button id="clsModal" type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            </div>
+            <div class="modal-body">
+            <div id="alert2" class="my-2" role="alert"></div>
+            <!-- Form -->
+            <form id="form_ast">
+                <div class="form-group">
+                    <label for="initilaPrice">Importo dell'offerta:</label>
+                    <input type="number" class="form-control" id="price" name="price" required>
+                </div>
+                <div class="text-end">
+                    <button id="aggAsta" type="submit" class="btn btn-primary my-2">Aggiungi</button>
+                </div>
+            </form>
+            </div>
+        </div>
+        </div>
+    </div>    
     <footer class="bg-dark text-center text-white">
         <div class="container p-4 pb-0">
             <div class="mb-4">
@@ -39,4 +105,5 @@
             <br/>
         </div>
     </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 </html>

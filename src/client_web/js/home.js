@@ -1,8 +1,8 @@
 
 // TODO Parte di prova da cancellare dopo.
 let aste = [
-    { partenza: 200, prezzo: 200, oggetto: "Lumaca" },
-    { partenza:100, prezzo: null, oggetto: "Patata" }
+    { ID:0, partenza: 200, prezzo: 200, oggetto: "Lumaca" },
+    { ID:1, partenza:100, prezzo: null, oggetto: "Patata" }
 ];
 
 $(document).ready(function () {
@@ -87,8 +87,7 @@ function printAllAuctions(){
     //     console.log(response);
     // });
 
-
-    let html = '';
+    $("#cont_aste").html("");
     for(asta of aste){
         let p 
         if(asta.prezzo == null){
@@ -96,7 +95,7 @@ function printAllAuctions(){
         } else {
             p = asta.prezzo;
         }
-        html+=`
+        html=`
         <div class="card mb-3">
             <div class="card-body">
                 <div class="row">
@@ -109,12 +108,15 @@ function printAllAuctions(){
                 </div>
                 <div class="row">
                     <div class="col-md-12 text-end">
-                        <button class="btn btn-primary" onclick="">Dettagli</button>
+                        <button id="info${asta.ID}" class="btn btn-primary">Dettagli</button>
                     </div>
                 </div>
             </div>
         </div>
         `;
+        $("#cont_aste").append(html);
+        document.getElementById("info"+asta.ID).addEventListener("click", function() {
+            window.location.href="/auction?ID="+asta.ID;       
+        });
     }
-    $("#cont_aste").html(html);
 }

@@ -49,6 +49,16 @@ app.post("/getAllAuctions", (req, res) => {
     res.sendStatus(201);
 });
 
+app.post("/addOffer", (req, res) => {
+    // TODO Aggiungere offerta al DB.
+    res.sendStatus(201);
+});
+
+app.post("/checkOffer", (req, res) => {
+    // TODO Prendere l'ultimo prezzo di una determinata asta..
+    res.sendStatus(201);
+});
+
 app.get('/', (req, res) => {
     if(req.cookies.user){
         res.redirect("/home");
@@ -87,6 +97,10 @@ app.get('/signup', (req, res) => {
 
 app.get('/home', (req, res) => {
     res.sendFile(path.join(__dirname, "html/home.html"));
+});
+
+app.get('/auction', (req, res) => {
+    res.sendFile(path.join(__dirname, "html/auction.html"));
 });
 
 app.listen(port, () => {

@@ -16,6 +16,8 @@ export class RaftNode {
     /**
      * Creates a new node for the Raft consensus protocol cluster.
      * @param {String} id Id of this node.
+     * @param {Number} portNodeProt Port of the protocol Node.
+     * @param {Number} portWebServer Port of the web Server.
      * @param {Number} minLeaderTimeout Minimum time in ms to wait before launching a new election after a leader timeout.
      * @param {Number} maxLeaderTimeout Maximum time in ms to wait before launching a new election after a leader timeout.
      * @param {Number} minElectionTimeout Minimum time in ms to wait before launching a new election after a failed one.
@@ -30,9 +32,13 @@ export class RaftNode {
      * @param {boolean} [debug=false] Flag indicating whether debugging is enabled.
      */
 
-    constructor(id, minLeaderTimeout, maxElectionTimeout, minElectionTimeout, minElectionDelay, heartbeatTimeout, hostForDB, userForDB, passwordForDB, databaseName, otherNodes, debug = false) {
+    constructor(id, portNodeProt, portWebServer, minLeaderTimeout, maxElectionTimeout, minElectionTimeout, minElectionDelay, heartbeatTimeout, hostForDB, userForDB, passwordForDB, databaseName, otherNodes, debug = false) {
         /** @type {String} */
         this.id = id;
+        /** @type {Number} */
+        this.portNodeProt = portNodeProt;
+        /** @type {Number} */
+        this.portWebServer = portWebServer;
         /** @type {Boolean} */
         this.started = false;
         /** @type {String} */
@@ -100,9 +106,6 @@ export class RaftNode {
         /** @type {Server | null} */
         this.webServer = null;
 
-
-
-
         /** 
          * Maps the socket id to the corresponding node id. 
          * @type {Map<String, String>} 
@@ -147,9 +150,6 @@ export class RaftNode {
         this.webHttpServer = createServer();
         this.webServer = new Server(this.protocolHttpServer);
 
-
-
-
         let serverNode = this;
         this.protocolServer.on("connection", socket => {    // Handle connections to this node.
             if (otherNodes.get(socket.handshake.address) != undefined) {
@@ -173,8 +173,8 @@ export class RaftNode {
             socket.on(CommandType.CLOSE_AUCTION, (args, callback) => this.onRequest(CommandType.CLOSE_AUCTION, args, callback));
         });
 
-        this.protocolHttpServer.listen(11111);
-        this.webHttpServer.listen(11112);
+        this.protocolHttpServer.listen(this.portNodeProt);
+        this.webHttpServer.listen(this.portWebServer);
 
         // Connect to other nodes.
         this.otherNodes.forEach((host, id) => {
@@ -193,8 +193,6 @@ export class RaftNode {
             sock.on("accept", () => {
                 accepted = true;
             });
-
-            sock.emitWithAck().then
 
             // sock.on("shutdown", () => {
             //     shutdown = true;

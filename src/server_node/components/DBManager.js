@@ -229,7 +229,6 @@ export class DBManager {
         }
     }
 
-    //TODO: Think about maybe include the highest bid instead of the sp (if exists the highest bid).
     /**
      * @returns {Promise<{
      * id : Number, 
@@ -243,7 +242,32 @@ export class DBManager {
         try {
             let results = [];
             const [rows, fields] = await this.connection.execute(
-                'SELECT Id AS id, ObjectName AS name, ObjectDescription AS desc, OpeningDate AS date FROM Actions WHERE ClosingDate IS NULL',
+                'SELECT Id AS id, ObjectName AS name, ObjectDescription AS desc, OpeningDate AS date FROM Auctions WHERE ClosingDate IS NULL',
+            );
+
+            return rows;
+        } catch (err) {
+            return null;
+        }
+    }
+
+    /**
+     * 
+     * @param {Number} auctionId 
+     * @param {Number} lastBidId 
+     * @returns {Promise<{
+    * bidId : Number, 
+    * val : Number,
+    * time : String
+    * }[] | null>}
+     */
+    async queryGetNewerBids(auctionId, lastBidId) {
+        try {
+            const [rows, fields] = await this.connection.execute(
+                `SELECT Id as bidId, UserMaker as user, Value as val, Time as time
+                FROM Bids
+                WHERE AuctionId = ? AND Id > ?`,
+                [auctionId, lastBidId]
             );
 
             return rows;

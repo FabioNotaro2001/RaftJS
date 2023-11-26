@@ -88,14 +88,14 @@ function printAllAuctions(){
     // });
 
     $("#cont_aste").html("");
-    for(asta of aste){
+    for(let asta of aste){
         let p 
         if(asta.prezzo == null){
             p = asta.partenza;
         } else {
             p = asta.prezzo;
         }
-        html=`
+        let html=`
         <div class="card mb-3">
             <div class="card-body">
                 <div class="row">

@@ -60,11 +60,13 @@ export class DBManager {
         });
 
         if (this.firstConnection) {
-            // Delete all tables contents if this is the first connection.
+            // Delete all tables contents if this is the first connection. We assume they already exist.
             // This is caused by the fact that at the beginning the log must be empty, so the database cannot contain any data, otherwise this can led to an inconsistency.
-            this.connection.query("TRUNCATE TABLE Users");
-            this.connection.query("TRUNCATE TABLE Bids");
-            this.connection.query("TRUNCATE TABLE Auctions");
+            await this.connection.query("SET FOREIGN_KEY_CHECKS = 0");
+            await this.connection.query("TRUNCATE TABLE Users");
+            await this.connection.query("TRUNCATE TABLE Bids");
+            await this.connection.query("TRUNCATE TABLE Auctions");
+            await this.connection.query("SET FOREIGN_KEY_CHECKS = 1");
 
             this.firstConnection = false;
         }
@@ -152,10 +154,12 @@ export class DBManager {
      */
     async getAuctionInfo(auctionId) {
         let [rows, _] = await this.connection.execute(
-            `SELECT TOP 1 a.UserMaker as um, a.StartingPrice as sp, a.ClosingDate as cd, b.Value as hv FROM Auctions a INNER JOIN Bid b
+            `SELECT a.UserMaker AS um, a.StartingPrice AS sp, a.ClosingDate AS cd, b.Value AS hv 
+            FROM Auctions AS a INNER JOIN Bids AS b
                 ON b.AuctionId = a.Id
-             WHERE Id = ?
-             ORDER BY b.Value DESC`,
+            WHERE a.Id = ?
+            ORDER BY b.Value DESC
+            LIMIT 1`,
             [auctionId]
         );
 
@@ -232,8 +236,8 @@ export class DBManager {
     /**
      * @returns {Promise<{
      * id : Number, 
-     * name : String,
-     * desc : String,
+     * objname : String,
+     * objdesc : String,
      * date : String,
      * sp : Number
      * }[] | null>}
@@ -242,7 +246,7 @@ export class DBManager {
         try {
             let results = [];
             const [rows, fields] = await this.connection.execute(
-                'SELECT Id AS id, ObjectName AS name, ObjectDescription AS desc, OpeningDate AS date FROM Auctions WHERE ClosingDate IS NULL',
+                'SELECT Id AS id, ObjectName AS objname, ObjectDescription AS objdesc, OpeningDate AS date FROM Auctions WHERE ClosingDate IS NULL',
             );
 
             return rows;
@@ -264,7 +268,7 @@ export class DBManager {
     async queryGetNewerBids(auctionId, lastBidId) {
         try {
             const [rows, fields] = await this.connection.execute(
-                `SELECT Id as bidId, UserMaker as user, Value as val, Time as time
+                `SELECT Id AS bidId, UserMaker AS user, Value AS val, Time AS time
                 FROM Bids
                 WHERE AuctionId = ? AND Id > ?`,
                 [auctionId, lastBidId]
@@ -279,9 +283,10 @@ export class DBManager {
     /**
      * @returns {Promise<{
     * id : Number, 
-    * name : String,
-    * desc : String,
-    * date : String,
+    * objname : String,
+    * objdesc : String,
+    * opdate : String,
+    * cldate : String,
     * sp : Number
     * }[] | null>}
     */
@@ -289,7 +294,7 @@ export class DBManager {
         try {
             let results = [];
             const [rows, fields] = await this.connection.execute(
-                'SELECT Id AS id, ObjectName AS name, ObjectDescription AS desc, OpeningDate AS date, StartingPrice AS sp FROM Actions WHERE UserMaker = ?',
+                'SELECT Id AS id, ObjectName AS objname, ObjectDescription AS objdesc, OpeningDate AS opdate, ClosingDate AS cldate, StartingPrice AS sp FROM Auctions WHERE UserMaker = ?',
                 [userId]
             );
 
@@ -302,8 +307,8 @@ export class DBManager {
     /**
       * @returns {Promise<{
     * id : Number, 
-    * name : String,
-    * desc : String,
+    * objname : String,
+    * objdesc : String,
     * date : String,
     * sp : Number
     * }[] | null>}
@@ -312,9 +317,10 @@ export class DBManager {
         try {
             let results = [];
             const [rows, fields] = await this.connection.execute(
-                `SELECT a.Id AS id, a.ObjectName AS name, a.ObjectDescription AS desc, a.OpeningDate AS date, a.StartingPrice as sp 
-                FROM Auctions a INNER JOIN Bids b
-                ON b.AuctionId = a.Id AND a.UserMaker = ?`,
+                `SELECT a.Id AS id, a.ObjectName AS objname, a.ObjectDescription AS objdesc, a.OpeningDate AS date, a.StartingPrice as sp
+                FROM Auctions AS a INNER JOIN Bids AS b
+                    ON b.AuctionId = a.Id AND b.UserMaker = ?
+                GROUP BY a.Id`,
                 [userId]
             );
 
@@ -338,10 +344,11 @@ export class DBManager {
         try{
             let results = [];
             const [rows, fields] = await this.connection.execute(
-                `SELECT TOP ?  Id as bidId, UserMaker as user, Value as val, Time as time
+                `SELECT Id as bidId, UserMaker as user, Value as val, Time as time
                 FROM Bids
-                WHERE AuctionId = ?`,
-                [n, auctionId]
+                WHERE AuctionId = ?
+                LIMIT ?`,
+                [auctionId, n]
             );
 
             return rows;

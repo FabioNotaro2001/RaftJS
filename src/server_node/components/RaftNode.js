@@ -9,6 +9,7 @@ import { LogRecord, AuctionCreateData, AuctionCloseData, UserCreateData, BidCrea
 import { error } from "console";
 import { DBManager } from "./DBManager.js";
 import { CommandType } from "../enums/CommandType.js";
+import { WebServerManager } from "./WebServerManager.js";
 
 // const MAX_ENTRIES_IN_REQUEST = 10;  // Max number of request that can be put together in a single request.
 
@@ -32,13 +33,11 @@ export class RaftNode {
      * @param {boolean} [debug=false] Flag indicating whether debugging is enabled.
      */
 
-    constructor(id, portNodeProt, portWebServer, minLeaderTimeout, maxElectionTimeout, minElectionTimeout, minElectionDelay, heartbeatTimeout, hostForDB, userForDB, passwordForDB, databaseName, otherNodes, debug = false) {
+    constructor(id, portNodeProt, portWebServer, minLeaderTimeout, maxLeaderTimeout, minElectionTimeout, maxElectionTimeout, minElectionDelay, heartbeatTimeout, hostForDB, userForDB, passwordForDB, databaseName, otherNodes, debug = false, disabledDB = false) {
         /** @type {String} */
         this.id = id;
         /** @type {Number} */
         this.portNodeProt = portNodeProt;
-        /** @type {Number} */
-        this.portWebServer = portWebServer;
         /** @type {Boolean} */
         this.started = false;
         /** @type {String} */
@@ -67,8 +66,15 @@ export class RaftNode {
         this.minElectionDelay = minElectionDelay;
         /** @type {Number} */
         this.heartbeatTimeout = heartbeatTimeout
-        /** @type {DBManager} */
-        this.dbManager = new DBManager(hostForDB, userForDB, passwordForDB, databaseName);
+
+        if(!disabledDB){
+            /** @type {DBManager} */
+            this.dbManager = new DBManager(hostForDB, userForDB, passwordForDB, databaseName);
+        }
+
+        /** @type {WebServerManager} */
+        this.webServerManager = new WebServerManager(this, portWebServer);
+
         /**
          * Leader-only.
          * 
@@ -100,12 +106,6 @@ export class RaftNode {
         /** @type {Server | null} */
         this.protocolServer = null;
 
-        /** @type {HTTPServer | null} */
-        this.webHttpServer = null;
-
-        /** @type {Server | null} */
-        this.webServer = null;
-
         /** 
          * Maps the socket id to the corresponding node id. 
          * @type {Map<String, String>} 
@@ -125,10 +125,13 @@ export class RaftNode {
         this.electionTimeout = null;
 
         /** @type {RPCManager} */
-        this.rpcManager = new RPCManager(Array.of(this.sockets.values()), this.id);
+        this.rpcManager = new RPCManager(this.sockets, this.id);
 
         /** @type {Boolean} */
         this.debug = debug;
+
+        /** @type {Boolean} */
+        this.disabledDB = disabledDB;
     }
 
     /**
@@ -141,14 +144,18 @@ export class RaftNode {
 
         this.debugLog("Starting node...");
 
-        // Connect the node to the database through its DBmanager.
-        this.dbManager.connect();
+        if(!this.disabledDB){
+             // Connect the node to the database through its DBmanager.
+            this.dbManager.connect();
+        }
+       
 
         // Start node servers.
         this.protocolHttpServer = createServer();
         this.protocolServer = new Server(this.protocolHttpServer);
-        this.webHttpServer = createServer();
-        this.webServer = new Server(this.protocolHttpServer);
+
+        this.webServerManager.start();
+        
 
         let serverNode = this;
         this.protocolServer.on("connection", socket => {    // Handle connections to this node.
@@ -166,15 +173,7 @@ export class RaftNode {
             serverNode.heartbeatTimeouts.set(id, null);
         });
 
-        this.webServer.on("connection", socket => {    // Handle connections to this node.
-            socket.on(CommandType.NEW_USER, (args, callback) => this.onRequest(CommandType.NEW_USER, args, callback));
-            socket.on(CommandType.NEW_AUCTION, (args, callback) => this.onRequest(CommandType.NEW_AUCTION, args, callback));
-            socket.on(CommandType.NEW_BID, (args, callback) => this.onRequest(CommandType.NEW_BID, args, callback));
-            socket.on(CommandType.CLOSE_AUCTION, (args, callback) => this.onRequest(CommandType.CLOSE_AUCTION, args, callback));
-        });
-
         this.protocolHttpServer.listen(this.portNodeProt);
-        this.webHttpServer.listen(this.portWebServer);
 
         // Connect to other nodes.
         this.otherNodes.forEach((host, id) => {
@@ -229,12 +228,16 @@ export class RaftNode {
 
         this.debugLog("Stopping node...");
 
-        // Disconnect the node to the database through its DBmanager.
-        this.dbManager.disconnect();
+        if(!this.disabledDB){
+            // Disconnect the node to the database through its DBmanager.
+            this.dbManager.disconnect();
+        }
 
         this.protocolHttpServer.close();
         this.protocolServer.close();
         this.protocolServer.disconnectSockets(true);
+
+        this.webServerManager.stop();
 
         this.sockets.clear();
         this.socketToNodeId.clear();
@@ -252,28 +255,40 @@ export class RaftNode {
                     /** @type {UserCreateData} */
                     let data = logEntry.logData;
 
-                    res = this.dbManager.queryAddNewUser(data.username, data.password);
+                    if(!this.disabledDB){
+                        res = this.dbManager.queryAddNewUser(data.username, data.password);
+                    }
+                    this.debugLog("Added new user to database.");
                     break;
                 }
                 case CommandType.NEW_AUCTION: {
                     /** @type {AuctionCreateData} */
                     let data = logEntry.logData;
 
-                    res = this.dbManager.queryAddNewAuction(data.user, data.startDate, data.objName, data.objDesc, data.startPrice);
+                    if(!this.disabledDB){
+                        res = this.dbManager.queryAddNewAuction(data.user, data.startDate, data.objName, data.objDesc, data.startPrice);
+                    }
+                    this.debugLog("Added new auction to database.");
                     break;
                 }
                 case CommandType.CLOSE_AUCTION: {
                     /** @type {AuctionCloseData} */
                     let data = logEntry.logData;
 
-                    res = this.dbManager.queryCloseAuction(data.auctionId, data.closingDate);
+                    if(!this.disabledDB){
+                        res = this.dbManager.queryCloseAuction(data.auctionId, data.closingDate);
+                    }
+                    this.debugLog("Closed auction in database.");
                     break;
                 }
                 case CommandType.NEW_BID: {
                     /** @type {BidCreateData} */
                     let data = logEntry.logData;
 
-                    res = this.dbManager.queryAddNewBid(data.user, data.auctionId, data.value);
+                    if(!this.dbManager){
+                        res = this.dbManager.queryAddNewBid(data.user, data.auctionId, data.value);
+                    }
+                    this.debugLog("Added new bid to database.");
                     break;
                 }
                 default: {
@@ -489,26 +504,29 @@ export class RaftNode {
         return; // Not implemented.
     }
 
+    startNewElection() {
+        this.leaderTimeout = null; // Timeout has expired.
+
+        this.state = State.CANDIDATE;
+        this.currentTerm++;
+        this.currentLeaderId = null;
+        this.votesGathered = 1;
+        this.rpcManager.sendElectionNotice(this.currentTerm, this.id, this.log.length - 1, this.log[-1] != null ? this.log[-1].term : null);
+        this.waitForElectionTimeout();  // Set a timeout in case the election doesn't end.
+        this.waitForHeartbeatTimeout(); // Set a timeout in case other nodes do not respond.
+    }
     /**
      * Set a timeout for communications from the leader.
      * 
      * In case the timeout expires, starts a new election as a candidate.
      */
     waitForLeaderTimeout() {
-        let extractedInterval = this.minLeaderTimeout + Math.random * (this.maxLeaderTimeout - this.minLeaderTimeout);
+        let extractedInterval = this.minLeaderTimeout + Math.random() * (this.maxLeaderTimeout - this.minLeaderTimeout);
         let node = this;
-        this.leaderTimeout = setInterval(function startNewElection() {
-            node.leaderTimeout = null; // Timeout has expired.
-            this.debugLog("Leader timeout expired! Starting new election...");
-
-            node.state = State.CANDIDATE;
-            node.currentTerm++;
-            node.currentLeaderId = null;
-            votesGathered = 1;
-            node.rpcManager.sendElectionNotice(node.currentTerm, node.id, node.log.length - 1, node.log[-1] != null ? node.log[-1].term : null);
-            node.waitForElectionTimeout();  // Set a timeout in case the election doesn't end.
-            node.waitForHeartbeatTimeout(); // Set a timeout in case other nodes do not respond.
-        }, extractedInterval)
+        this.leaderTimeout = setInterval(() => {
+            node.debugLog("Leader timeout expired! Starting new election...");
+            node.startNewElection();
+        }, extractedInterval);
     }
 
     /**
@@ -517,19 +535,11 @@ export class RaftNode {
      * In case the timeout expires, starts a new election as a candidate.
      */
     waitForElectionTimeout() {
-        let extractedInterval = this.minElectionTimeout + Math.random * (this.maxElectionTimeout - this.minElectionTimeout);
+        let extractedInterval = this.minElectionTimeout + Math.random() * (this.maxElectionTimeout - this.minElectionTimeout);
         let node = this;
-        this.electionTimeout = setInterval(function startNewElection() {
-            node.electionTimeout = null; // Timeout has expired.
-            this.debugLog("Election timeout expired! Starting new election...");
-
-            node.state = State.CANDIDATE;
-            node.currentTerm++;
-            node.currentLeaderId = null;
-            votesGathered = 1;
-            node.rpcManager.sendElectionNotice(node.currentTerm, node.id, node.log.length - 1, node.log[-1] != null ? node.log[-1].term : null);
-            node.waitForElectionTimeout();  // Set a timeout in case the new election doesn't end.
-            node.waitForHeartbeatTimeout(); // Set a timeout in case other nodes do not respond.
+        this.electionTimeout = setInterval(() => {
+            node.debugLog("Election timeout expired! Starting new election...");
+            node.startNewElection();
         }, extractedInterval)
     }
 
@@ -544,57 +554,32 @@ export class RaftNode {
         let thisNode = this;
         let sendHeartbeat = null;
 
-        if (nodeId != null) { // The node is specified.
-            if (thisNode.state === State.CANDIDATE) {  // The message sent is a vote request.
-                sendHeartbeat = () => {
-                    thisNode.heartbeatTimeouts.delete(nodeId); // Timeout has expired.
-                    this.debugLog("Sending new heartbeat to node %s", nodeId);
+        if (thisNode.state === State.CANDIDATE) {  // The message sent is a vote request.
+            sendHeartbeat = (nodeId) => {
+                thisNode.heartbeatTimeouts.delete(nodeId); // Timeout has expired.
+                thisNode.debugLog("Sending new heartbeat to node %s", nodeId);
 
-                    thisNode.rpcManager.sendElectionNoticeTo(thisNode.sockets.get(nodeId), thisNode.term, thisNode.id, thisNode.log.length - 1, thisNode.log[-1] != null ? thisNode.log[-1].term : null);
-                    thisNode.waitForHeartbeatTimeout(nodeId);
-                };
-            } else if (thisNode.state === State.LEADER) {    // The message sent is a replication request.
-                sendHeartbeat = () => {
-                    thisNode.heartbeatTimeouts.delete(nodeId); // Timeout has expired.
-                    this.debugLog("Sending new heartbeat to node %s", nodeId);
+                thisNode.rpcManager.sendElectionNoticeTo(thisNode.sockets.get(nodeId), thisNode.term, thisNode.id, thisNode.log.length - 1, thisNode.log[-1] != null ? thisNode.log[-1].term : null);
+                thisNode.waitForHeartbeatTimeout(nodeId);
+            };
+        } else if (thisNode.state === State.LEADER) {    // The message sent is a replication request.
+            sendHeartbeat = (nodeId) => {
+                thisNode.heartbeatTimeouts.delete(nodeId); // Timeout has expired.
+                thisNode.debugLog("Sending new heartbeat to node %s", nodeId);
 
-                    let missingEntries = thisNode.log.slice(thisNode.matchIndex.get(nodeId) + 1);
-                    let prevLogIndex = thisNode.nextIndex[nodeId] - 1;
-                    let prevLogTerm = thisNode.log[prevLogIndex];
-                    thisNode.rpcManager.sendReplicationTo(thisNode.sockets.get(nodeId), thisNode.term, prevLogIndex, prevLogTerm, missingEntries, thisNode.commitIndex + 1);
-                    thisNode.waitForHeartbeatTimeout(nodeId);
-                };
-            } else { // Illegal state.
-                throw new Error("Cannot send heartbeat when in state " + Object.entries(State).find(e => e[1] === thisNode.state).at(0));
-            }
-
-            // Starts the timeout.
-            thisNode.heartbeatTimeouts.set(nodeId, setInterval(sendHeartbeat, thisNode.heartbeatTimeout));
-        } else { // The node is unspecified.
-            if (thisNode.state === State.CANDIDATE) {  // The message sent is a vote request.
-                sendHeartbeat = (nodeId) => {
-                    thisNode.heartbeatTimeouts.delete(nodeId); // Timeout has expired.
-                    this.debugLog("Sending new heartbeat to node %s", nodeId);
-
-                    thisNode.rpcManager.sendElectionNoticeTo(nodeId, thisNode.term, thisNode.id, thisNode.log.length - 1, thisNode.log[-1] != null ? thisNode.log[-1].term : null);
-                    thisNode.waitForHeartbeatTimeout(nodeId);
-                };
-            } else if (thisNode.state === State.LEADER) {    // The message sent is a replication request.
-                sendHeartbeat = (nodeId) => {
-                    thisNode.heartbeatTimeouts.delete(nodeId); // Timeout has expired.
-                    this.debugLog("Sending new heartbeat to node %s", nodeId);
-
-                    let missingEntries = thisNode.log.slice(thisNode.matchIndex.get(nodeId) + 1);
-                    let prevLogIndex = thisNode.nextIndex[nodeId] - 1;
-                    let prevLogTerm = thisNode.log[prevLogIndex];
-                    thisNode.rpcManager.sendReplicationTo(nodeId, thisNode.term, prevLogIndex, prevLogTerm, missingEntries, thisNode.commitIndex + 1);
-                    thisNode.waitForHeartbeatTimeout(nodeId);
-                };
-            } else { // Illegal state.
-                throw new Error("Cannot send heartbeat when in state " + Object.entries(State).find(e => e[1] === thisNode.state).at(0));
-            }
-
-            // Starts all the timeouts.
+                let missingEntries = thisNode.log.slice(thisNode.matchIndex.get(nodeId) + 1);
+                let prevLogIndex = thisNode.nextIndex[nodeId] - 1;
+                let prevLogTerm = thisNode.log[prevLogIndex];
+                thisNode.rpcManager.sendReplicationTo(thisNode.sockets.get(nodeId), thisNode.term, prevLogIndex, prevLogTerm, missingEntries, thisNode.commitIndex + 1);
+                thisNode.waitForHeartbeatTimeout(nodeId);
+            };
+        } else { // Illegal state.
+            throw new Error("Cannot send heartbeat when in state " + Object.entries(State).find(e => e[1] === thisNode.state).at(0));
+        }
+        
+        if (nodeId != null) { // Sends an heartbeat to a specified node.
+            thisNode.heartbeatTimeouts.set(nodeId, setInterval(() => sendHeartbeat(nodeId), thisNode.heartbeatTimeout));
+        } else { // Sends an heartbeat to all other nodes.
             this.heartbeatTimeouts.forEach((_, k) => {
                 thisNode.heartbeatTimeouts.set(k, setInterval(() => sendHeartbeat(k), thisNode.heartbeatTimeout));
             });
@@ -656,40 +641,6 @@ export class RaftNode {
             });
             this.heartbeatTimeouts.clear();
         }
-    }
-
-    // Functions that handle the various requests that can be made on the database.
-    // For every request add it on the log,  check the match index and reset the heartbeat timeout.
-    onRequest(commandType, args, callback) {
-        let prevLogIndex = this.log.length - 1;
-        let prevLogTerm = this.log[-1] ? this.log[-1].term : null;
-
-        switch (commandType) {
-            case CommandType.NEW_USER: {
-                this.log.push(new LogRecord(this.currentTerm, commandType, new UserCreateData(args.username, args.password), callback));
-                break;
-            }
-            case CommandType.NEW_AUCTION: {
-                this.log.push(new LogRecord(this.currentTerm, commandType, new AuctionCreateData(args.user, args.startDate, args.objName, args.objDesc, args.startPrice), callback));
-                break;
-            }
-            case CommandType.NEW_BID: {
-                this.log.push(new LogRecord(this.currentTerm, commandType, new BidCreateData(args.user, args.auctionId, args.value), callback));
-                break;
-            }
-            case CommandType.CLOSE_AUCTION: {
-                this.log.push(new LogRecord(this.currentTerm, commandType, new AuctionCloseData(args.auctionId, args.closingDate), callback));
-                break;
-            }
-        }
-
-        let node = this;
-        this.matchIndex.forEach((i, nodeId) => {
-            if (i == node.commitIndex) {
-                this.rpcManager.sendReplicationTo(node.sockets.get(nodeId), node.currentTerm, prevLogIndex, prevLogTerm, [this.log[-1]], node.commitIndex);
-                this.resetHeartbeatTimeout(nodeId);
-            }
-        });
     }
 
     debugLog(message, ...optionalParams) {

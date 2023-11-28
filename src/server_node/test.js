@@ -1,14 +1,25 @@
-import { RaftNode } from "./components/RaftNode";
+import { RaftNode } from "./components/RaftNode.js";
 
-let arr =[];
-let ids = ["Node1", "Node2", "Node3", "Node4", "Node5"];
+let nNodes = 5;
+let ids = [];
+let ports = [];
+let nodes = [];
 
-for(let i = 15000; i<15010; i+=2){
-    arr.push({port1:i, port2:i+1});
+for(let i = 0; i < nNodes; i++){
+    ids.push("Node" + (i + 1));
+    ports.push({port1:15000 + i * 2, port2:15000 + i * 2 + 1});
 }
 
-let nodes = []
-for(let i = 0; i<arr.length; i++){
-    let arr2 = ids.filter((id) => id!="Node"+(id+1));
-    nodes.push(new RaftNode(ids[i], arr[i].port1, arr[i].port2, 3000, 4000, 6000, 7000, 1000))
+for(let i = 0; i < nNodes; i++){
+    let otherIDs = ids.filter((id) => id != ids[i]);
+    let tempMap = new Map();
+    for(let i = 0; i < otherIDs.length; i++){
+        let id = otherIDs[i];
+        tempMap.set("127.0.0." + (i + 1), id);
+    }
+    nodes.push(new RaftNode(ids[i], ports[i].port1, ports[i].port2, 8000, 15000, 8000, 15000, 3000, 4000, "", "", "", "",
+                tempMap, true, true));
 }
+
+nodes.forEach((e) => e.start());
+

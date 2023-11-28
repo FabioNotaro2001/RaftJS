@@ -10,7 +10,7 @@ export class RPCManager {
 
     /**
      * Creates an instance of the class.
-     * @param {SocketCl[]} sockets Array of sockets for the other nodes.
+     * @param {Map<String, SocketCl>[]} sockets Map from IDs to sockets.
      * @param {String} nodeId Id of the node linked to this manager instance.
      */
     constructor(sockets, nodeId){
@@ -27,6 +27,7 @@ export class RPCManager {
      * @returns {Boolean} Returss True if..., else false.
      */
     sendTo(receiver, rpcType, rpcParameters) {
+        console.log("!!!!!!!!!!!!!!"+receiver.connected);
         receiver.emit(rpcType, rpcParameters);
     }
 
@@ -36,7 +37,8 @@ export class RPCManager {
      * @param {RPCParameters} rpcParameters Parameterrs useful for the RPC.
      */
     sendAll(rpcType, rpcParameters) {
-        this.sockets.forEach(s => {
+        this.sockets.forEach((s, _) => {
+            console.log("!!!!!!!!!!!!!!"+s.connected);
             s.emit(rpcType, rpcParameters);
         })
     }

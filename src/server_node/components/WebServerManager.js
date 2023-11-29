@@ -13,18 +13,14 @@ export class WebServerManager{
         this.raftNode = raftNode;
         this.webServerPort = webServerPort;
         
-        /** @type {HTTPServer | null} */
-        this.webHttpServer = null;
-
         /** @type {Server | null} */
-        this.webServer = null;
+        this.webServerServer = null;
     }
 
     start(){
-        this.webHttpServer = createServer();
-        this.webServer = new Server(this.webHttpServer);
+        this.webServerServer = new Server();
 
-        this.webServer.on("connection", socket => {    // Handle connections to this node.
+        this.webServerServer.on("connection", socket => {    // Handle connections to this node.
             socket.on(CommandType.NEW_USER, (args, callback) => this.onRequest(CommandType.NEW_USER, args, callback));
             socket.on(CommandType.NEW_AUCTION, (args, callback) => this.onRequest(CommandType.NEW_AUCTION, args, callback));
             socket.on(CommandType.NEW_BID, (args, callback) => this.onRequest(CommandType.NEW_BID, args, callback));
@@ -32,13 +28,12 @@ export class WebServerManager{
         });
 
         
-        this.webHttpServer.listen(this.webServerPort);
+        this.webServerServer.listen(this.webServerPort);
     }
 
     stop(){
-        this.webHttpServer.close();
-        this.webServer.close();
-        this.webServer.disconnectSockets(true);
+        this.webServerServer.close();
+        this.webServerServer.disconnectSockets(true);
     }
 
     // Functions that handle the various requests that can be made on the database.

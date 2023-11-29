@@ -151,20 +151,23 @@ export class RaftNode {
        
 
         // Start node servers.
-        this.protocolHttpServer = createServer();
-        this.protocolServer = new Server(this.protocolHttpServer);
-
-        this.webServerManager.start();
-        
+        // this.protocolHttpServer = createServer((_, res) => {
+        //     res.write("OOOOOOO");
+        //     res.end();
+        //     this.debugLog("OI");
+        // });
+        this.protocolServer = new Server();
 
         let serverNode = this;
+
         this.protocolServer.on("connection", socket => {    // Handle connections to this node.
-            if (otherNodes.get(socket.handshake.address) != undefined) {
-                socket.emit("accept");
-            } else {
-                socket.disconnect(true);    // Connections from addresses not in the configuration are closed immediately.
-                return;
-            }
+            this.debugLog("Received connection request from: " + socket.handshake.address);
+            socket.emit("accept");
+            // if (serverNode.otherNodes.get(socket.handshake.address) != undefined) {
+            // } else {
+            //     socket.disconnect(true);    // Connections from addresses not in the configuration are closed immediately.
+            //     return;
+            // }
 
             socket.on(RPCType.APPENDENTRIES, args => this.onAppendEntriesMessage(socket, args));
             socket.on(RPCType.REQUESTVOTE, args => this.onRequestVoteMessage(socket, args));
@@ -173,10 +176,16 @@ export class RaftNode {
             serverNode.heartbeatTimeouts.set(id, null);
         });
 
-        this.protocolHttpServer.listen(this.portNodeProt);
+        this.protocolServer.listen(this.portNodeProt);
+        this.debugLog("Protocol server listening on port " + this.portNodeProt);
+        
+        this.webServerManager.start();
+        this.debugLog("Web server listening on port " + this.webServerManager.webServerPort);
 
         // Connect to other nodes.
-        this.otherNodes.forEach((host, id) => {
+        this.otherNodes.forEach((id, host) => {
+            this.debugLog("Connecting to " + host);
+
             let sock = io(host, {
                 autoConnect: false,
                 reconnection: true,
@@ -191,6 +200,10 @@ export class RaftNode {
 
             sock.on("accept", () => {
                 accepted = true;
+            });
+
+            sock.on("connect_error", (err) => {
+                this.debugLog("Failed to connect: " + err.message);
             });
 
             // sock.on("shutdown", () => {
@@ -233,7 +246,7 @@ export class RaftNode {
             this.dbManager.disconnect();
         }
 
-        this.protocolHttpServer.close();
+        // this.protocolHttpServer.close();
         this.protocolServer.close();
         this.protocolServer.disconnectSockets(true);
 
@@ -523,7 +536,7 @@ export class RaftNode {
     waitForLeaderTimeout() {
         let extractedInterval = this.minLeaderTimeout + Math.random() * (this.maxLeaderTimeout - this.minLeaderTimeout);
         let node = this;
-        this.leaderTimeout = setInterval(() => {
+        this.leaderTimeout = setTimeout(() => {
             node.debugLog("Leader timeout expired! Starting new election...");
             node.startNewElection();
         }, extractedInterval);
@@ -537,7 +550,7 @@ export class RaftNode {
     waitForElectionTimeout() {
         let extractedInterval = this.minElectionTimeout + Math.random() * (this.maxElectionTimeout - this.minElectionTimeout);
         let node = this;
-        this.electionTimeout = setInterval(() => {
+        this.electionTimeout = setTimeout(() => {
             node.debugLog("Election timeout expired! Starting new election...");
             node.startNewElection();
         }, extractedInterval)
@@ -578,10 +591,10 @@ export class RaftNode {
         }
         
         if (nodeId != null) { // Sends an heartbeat to a specified node.
-            thisNode.heartbeatTimeouts.set(nodeId, setInterval(() => sendHeartbeat(nodeId), thisNode.heartbeatTimeout));
+            thisNode.heartbeatTimeouts.set(nodeId, setTimeout(() => sendHeartbeat(nodeId), thisNode.heartbeatTimeout));
         } else { // Sends an heartbeat to all other nodes.
             this.heartbeatTimeouts.forEach((_, k) => {
-                thisNode.heartbeatTimeouts.set(k, setInterval(() => sendHeartbeat(k), thisNode.heartbeatTimeout));
+                thisNode.heartbeatTimeouts.set(k, setTimeout(() => sendHeartbeat(k), thisNode.heartbeatTimeout));
             });
         }
     }
@@ -645,7 +658,7 @@ export class RaftNode {
 
     debugLog(message, ...optionalParams) {
         if (this.debug) {
-            console.log("[" + this.id + "]: " + message, optionalParams);
+            console.log("[" + this.id + "]: " + message, optionalParams.length > 0 ? optionalParams : "");
         }
     }
 }

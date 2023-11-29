@@ -27,7 +27,6 @@ export class RPCManager {
      * @returns {Boolean} Returss True if..., else false.
      */
     sendTo(receiver, rpcType, rpcParameters) {
-        console.log("!!!!!!!!!!!!!!"+receiver.connected);
         receiver.emit(rpcType, rpcParameters);
     }
 
@@ -38,7 +37,6 @@ export class RPCManager {
      */
     sendAll(rpcType, rpcParameters) {
         this.sockets.forEach((s, _) => {
-            console.log("!!!!!!!!!!!!!!"+s.connected);
             s.emit(rpcType, rpcParameters);
         })
     }
@@ -52,8 +50,10 @@ export class RPCManager {
      * @param {Number} leaderCommit Leader’s commitIndex
      */
     sendReplication(term, prevLogIndex, prevLogTerm, entries, leaderCommit) {
-        this.sendAll(RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(term, prevLogIndex, prevLogTerm, entries, leaderCommit));
+        this.sendAll(RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(this.currentId, term, prevLogIndex, prevLogTerm, entries, leaderCommit));
     }
+
+    // FIXME: remove candidateId arguments.
 
     /**
      * RPC request for appending entries and log replication in a single node.
@@ -65,7 +65,7 @@ export class RPCManager {
      * @param {Number} leaderCommit Leader’s commitIndex
      */
     sendReplicationTo(receiver, term, prevLogIndex, prevLogTerm, entries, leaderCommit) {
-        this.sendTo(receiver, RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(term, prevLogIndex, prevLogTerm, entries, leaderCommit));
+        this.sendTo(receiver, RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(this.currentId, term, prevLogIndex, prevLogTerm, entries, leaderCommit));
     }
     
     /**
@@ -76,7 +76,7 @@ export class RPCManager {
      * @param {Number} matchIndex Index of highest log entry known to be replicated on follower's server.
      */
     sendReplicationResponse(receiver, term, success, matchIndex) {
-        this.sendTo(receiver, AppendEntriesParameters.forResponse(term, success, matchIndex));
+        this.sendTo(receiver, AppendEntriesParameters.forResponse(this.currentId, term, success, matchIndex));
     }
     
     /**
@@ -87,7 +87,7 @@ export class RPCManager {
      * @param {Number | null} lastLogTerm Term of candidate’s last log entry.
      */
     sendElectionNotice(term, candidateId, lastLogIndex, lastLogTerm) {
-        this.sendAll(RPCType.REQUESTVOTE, RequestVoteParameters.forRequest(term, candidateId, lastLogIndex, lastLogTerm));
+        this.sendAll(RPCType.REQUESTVOTE, RequestVoteParameters.forRequest(this.currentId, term, lastLogIndex, lastLogTerm));
     }
 
     /**
@@ -99,7 +99,7 @@ export class RPCManager {
      * @param {Number | null} lastLogTerm Term of candidate’s last log entry.
      */
     sendElectionNoticeTo(receiver, term, candidateId, lastLogIndex, lastLogTerm) {
-        this.sendTo(receiver, RPCType.REQUESTVOTE, RequestVoteParameters.forRequest(term, candidateId, lastLogIndex, lastLogTerm));
+        this.sendTo(receiver, RPCType.REQUESTVOTE, RequestVoteParameters.forRequest(this.currentId, term, lastLogIndex, lastLogTerm));
     }
     
     /**
@@ -107,8 +107,8 @@ export class RPCManager {
      * @param {SocketCl} receiver Socket of the candidate who started the election.
      * @param {Boolean} voteGranted True means candidate received vote.
      */
-    sendVote(receiver, voteGranted) {
-        this.sendTo(receiver, RPCType.REQUESTVOTE, RequestVoteParameters.forResponse(term, voteGranted));
+    sendVote(receiver, term, voteGranted) {
+        this.sendTo(receiver, RPCType.REQUESTVOTE, RequestVoteParameters.forResponse(this.currentId, term, voteGranted));
     }
     
     /**

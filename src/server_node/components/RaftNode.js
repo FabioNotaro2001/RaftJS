@@ -93,7 +93,7 @@ export class RaftNode {
         this.otherNodes = otherNodes;
 
         /** @type {Number} */
-        this.clusterSize = otherNodes.length + 1;
+        this.clusterSize = otherNodes.size + 1;
 
         /** @type {String | null} */
         this.currentLeaderId = null;
@@ -139,7 +139,7 @@ export class RaftNode {
      */
     start() {
         if (this.started) {
-            throw new error("Node is already active.");
+            throw new Error("Node is already active.");
         }
 
         this.debugLog("Starting node...");
@@ -149,20 +149,19 @@ export class RaftNode {
             this.dbManager.connect();
         }
        
+        //FIXME: delete protocolHTTPServer
 
-        // Start node servers.
-        // this.protocolHttpServer = createServer((_, res) => {
-        //     res.write("OOOOOOO");
-        //     res.end();
-        //     this.debugLog("OI");
-        // });
-        this.protocolServer = new Server();
+        this.protocolServer = new Server({
+            allowEIO3: true
+        });
 
         let serverNode = this;
 
         this.protocolServer.on("connection", socket => {    // Handle connections to this node.
-            this.debugLog("Received connection request from: " + socket.handshake.address);
             socket.emit("accept");
+
+            // TODO: accept only qualified connections??
+
             // if (serverNode.otherNodes.get(socket.handshake.address) != undefined) {
             // } else {
             //     socket.disconnect(true);    // Connections from addresses not in the configuration are closed immediately.
@@ -173,7 +172,7 @@ export class RaftNode {
             socket.on(RPCType.REQUESTVOTE, args => this.onRequestVoteMessage(socket, args));
             // socket.on(RPCType.SNAPSHOT, args => this.onSnapshotMessage(socket, args));
 
-            serverNode.heartbeatTimeouts.set(id, null);
+            serverNode.heartbeatTimeouts.set(serverNode.socketToNodeId.get(socket.id), null);
         });
 
         this.protocolServer.listen(this.portNodeProt);
@@ -186,7 +185,7 @@ export class RaftNode {
         this.otherNodes.forEach((id, host) => {
             this.debugLog("Connecting to " + host);
 
-            let sock = io(host, {
+            let sock = io("ws://" + host, {
                 autoConnect: false,
                 reconnection: true,
                 reconnectionAttempts: 5,
@@ -236,7 +235,7 @@ export class RaftNode {
      */
     stop() {
         if (!this.started) {
-            throw new error("Node is not active.");
+            throw new Error("Node is not active.");
         }
 
         this.debugLog("Stopping node...");
@@ -305,15 +304,17 @@ export class RaftNode {
                     break;
                 }
                 default: {
-                    throw new error("Unknown command type '" + logEntry.commandType + "'");
+                    throw new Error("Unknown command type '" + logEntry.commandType + "'");
                 }
             }
 
             logEntry.callback(res); // Fulfill promise to web server by sending another promise.
         } else {
-            throw new error("Log entry at index " + index + "is undefined.");
+            throw new Error("Log entry at index " + index + "is undefined.");
         }
     }
+
+    // FIXME: remove sender parameter from onAppendEntriesMessage and the other. maybe put 'this.sockets.get(args.senderId)' in a variable
 
     /**
      * Handles incoming AppendEntries RPC messages.
@@ -345,15 +346,15 @@ export class RaftNode {
         switch (this.state) {
             case State.FOLLOWER: {
                 if (args.isResponse) {
-                    this.rpcManager.sendReplicationResponse(sender, this.currentTerm, false, this.commitIndex);
-                    this.debugLog("Received \"%s\" response -> refused.", RPCType.APPENDENTRIES);
+                    this.rpcManager.sendReplicationResponse(this.sockets.get(args.senderId), this.currentTerm, false, this.commitIndex);
+                    this.debugLog("Received \"%s\" response -> refused.", RPCType.APPENDENTRIES);   // TODO: specify from who
                     break;
                 }
 
                 if (args.term < this.currentTerm ||
-                    this.log[args.prevLogIndex].term !== args.prevLogTerm) {
-                    this.rpcManager.sendReplicationResponse(sender, this.currentTerm, false, this.commitIndex);
-                    this.debugLog("Received %s message from previous term -> refused.", RPCType.APPENDENTRIES);
+                    (this.log[args.prevLogIndex] && this.log[args.prevLogIndex].term !== args.prevLogTerm)) {   // FIXME: unsure
+                    this.rpcManager.sendReplicationResponse(this.sockets.get(args.senderId), this.currentTerm, false, this.commitIndex);
+                    this.debugLog("Received %s message from previous term -> refused.", RPCType.APPENDENTRIES); // TODO: specify from who
                     break;
                 }
 
@@ -373,23 +374,23 @@ export class RaftNode {
                 }
 
                 if (args.leaderCommit > this.commitIndex) {
+                    let lastIndex = args.prevLogIndex ?? -1 + args.entries.length;
                     for (let i = this.commitIndex + 1; i <= lastIndex; i++) {   // Applies log entries to the database.
                         this.applyLogEntry(i);
                     }
 
                     this.debugLog("Committed %d log entries to database.", args.leaderCommit - this.commitIndex);
-                    let lastIndex = args.prevLogIndex + args.entries.length;
                     this.commitIndex = lastIndex < args.leaderCommit ? lastIndex : args.leaderCommit;
                 }
 
-                this.rpcManager.sendReplicationResponse(sender, this.currentTerm, true, this.commitIndex);
+                this.rpcManager.sendReplicationResponse(this.sockets.get(args.senderId), this.currentTerm, true, this.commitIndex);
                 this.debugLog("Received \"%s\" request -> responded.", RPCType.APPENDENTRIES);
                 this.resetLeaderTimeout();
             }
             case State.LEADER: {
                 // This message is sent by an older leader and is no longer relevant.
                 if (!args.isResponse) {
-                    this.rpcManager.sendReplicationResponse(sender, this.currentTerm, false, this.commitIndex);
+                    this.rpcManager.sendReplicationResponse(this.sockets.get(args.senderId), this.currentTerm, false, this.commitIndex);
                     this.debugLog("Received \"%s\" request from previous term -> refused.", RPCType.APPENDENTRIES);
                 }
 
@@ -403,7 +404,7 @@ export class RaftNode {
                     // Sends missing entries to the node.
                     let missingEntries = this.log.slice(args.matchIndex + 1);
                     if (missingEntries.length > 0) {
-                        this.rpcManager.sendReplicationTo(sender, this.currentTerm, prevLogIndex, prevLogTerm, missingEntries, this.commitIndex);
+                        this.rpcManager.sendReplicationTo(this.sockets.get(args.senderId), this.currentTerm, prevLogIndex, prevLogTerm, missingEntries, this.commitIndex);
                         this.debugLog("Received successful \"%s\" response -> responded.", RPCType.APPENDENTRIES);
                         this.resetHeartbeatTimeout(args.senderId);
                     } 
@@ -428,7 +429,7 @@ export class RaftNode {
                 break; // Nothing is done if it's a log conflict, eventually a new election will start and the new leader fix things.
             }
             case State.CANDIDATE: {
-                this.rpcManager.sendReplicationResponse(sender, this.currentTerm, false, this.commitIndex); // The message is for a previous term and it is rejected.
+                this.rpcManager.sendReplicationResponse(this.sockets.get(args.senderId), this.currentTerm, false, this.commitIndex); // The message is for a previous term and it is rejected.
                 this.debugLog("Received \"%s\" message from outdated term -> refused.", RPCType.APPENDENTRIES);
                 break;
             }
@@ -463,43 +464,43 @@ export class RaftNode {
             this.currentLeaderId = null;
             this.currentTerm = args.term;
 
-            this.debugLog("New leader detected. Changing to %s state...", State.FOLLOWER);
+            this.debugLog("New election detected. Changing to %s state...", State.FOLLOWER);
         }
 
         switch (this.state) {
             case State.FOLLOWER: {
                 if (this.votedFor == null) {
                     this.votedFor = args.senderId;
-                    this.rpcManager.sendVote(sender, true);
-                    this.debugLog("Received \"%s\" request -> cast vote.", RPCType.REQUESTVOTE);
+                    this.rpcManager.sendVote(this.sockets.get(args.senderId), this.currentTerm, true);
+                    this.debugLog("Received \"%s\" request from %s -> cast vote.", RPCType.REQUESTVOTE, args.senderId);
                 } else {
-                    this.rpcManager.sendVote(sender, false);
-                    this.debugLog("Received \"%s\" request -> refuse vote.", RPCType.REQUESTVOTE);
+                    this.rpcManager.sendVote(this.sockets.get(args.senderId), this.currentTerm, false);
+                    this.debugLog("Received \"%s\" request from %s -> refuse vote.", RPCType.REQUESTVOTE, args.senderId);
                 }
                 break;
             }
             case State.LEADER: {
-                this.rpcManager.sendVote(sender, false);
-                this.debugLog("Received \"%s\" request from loser candidate -> refuse vote.", RPCType.REQUESTVOTE);
+                this.rpcManager.sendVote(this.sockets.get(args.senderId), this.currentTerm, false);
+                this.debugLog("Received \"%s\" request from loser candidate %s -> refuse vote.", RPCType.REQUESTVOTE, args.senderId);
                 break;
             }
             case State.CANDIDATE: {
                 if (args.isResponse) {
                     this.stopHeartbeatTimeout(args.senderId);
                     if (args.voteGranted) {
-                        this.debugLog("Received vote confirmation. Votes obtained so far: %d.", this.votesGathered + 1);
+                        this.debugLog("Received vote confirmation from %s. Votes obtained so far: %d.", args.senderId, this.votesGathered + 1);
                         if (this.votesGathered++ > Math.floor(this.clusterSize / 2)) {
                             this.debugLog("Majority obtained -> changing state to leader and notifying other nodes.");
                             this.state = State.LEADER;
-                            this.rpcManager.sendReplication(this.term, this.log.length - 1, (node.log[-1] != null ? node.log[-1].term : null), [], this.commitIndex);
+                            this.rpcManager.sendReplication(this.term, this.log.length - 1, (this.log[-1] != null ? this.log[-1].term : null), [], this.commitIndex);
                             this.waitForHeartbeatTimeout();
                         }
                     } else {
-                        this.debugLog("Received vote refusal.");
+                        this.debugLog("Received vote refusal from %s.", args.senderId);
                     }
                 } else {
-                    this.rpcManager.sendVote(sender, false);
-                    this.debugLog("Received \"%s\" request from another candidate -> refuse vote.", RPCType.REQUESTVOTE);
+                    this.rpcManager.sendVote(this.sockets.get(args.senderId), this.currentTerm, false);
+                    this.debugLog("Received \"%s\" request from other candidate %s -> refuse vote.", RPCType.REQUESTVOTE, args.senderId);
                 }
                 break;
             }
@@ -593,8 +594,8 @@ export class RaftNode {
         if (nodeId != null) { // Sends an heartbeat to a specified node.
             thisNode.heartbeatTimeouts.set(nodeId, setTimeout(() => sendHeartbeat(nodeId), thisNode.heartbeatTimeout));
         } else { // Sends an heartbeat to all other nodes.
-            this.heartbeatTimeouts.forEach((_, k) => {
-                thisNode.heartbeatTimeouts.set(k, setTimeout(() => sendHeartbeat(k), thisNode.heartbeatTimeout));
+            thisNode.otherNodes.forEach((nodeId, _) => {
+                thisNode.heartbeatTimeouts.set(nodeId, setTimeout(() => sendHeartbeat(nodeId), thisNode.heartbeatTimeout));
             });
         }
     }
@@ -628,7 +629,7 @@ export class RaftNode {
      * Stops the leader timeout, preventing a new election from starting.
      */
     stopLeaderTimeout() {
-        clearInterval(this.leaderTimeout);
+        clearTimeout(this.leaderTimeout);
         this.leaderTimeout = null;
     }
 
@@ -636,7 +637,7 @@ export class RaftNode {
      * Stops the election timeout, preventing a new election from starting.
     */
     stopElectionTimeout() {
-        clearInterval(this.electionTimeout);
+        clearTimeout(this.electionTimeout);
         this.electionTimeout = null;
     }
 
@@ -646,7 +647,7 @@ export class RaftNode {
     */
     stopHeartbeatTimeout(nodeId = null) {
         if (nodeId != null) {
-            clearInterval(this.heartbeatTimeouts.get(nodeId));
+            clearTimeout(this.heartbeatTimeouts.get(nodeId));
             this.heartbeatTimeouts.delete(nodeId);
         } else {
             this.sockets.forEach((_, id) => {
@@ -658,7 +659,7 @@ export class RaftNode {
 
     debugLog(message, ...optionalParams) {
         if (this.debug) {
-            console.log("[" + this.id + "]: " + message, optionalParams.length > 0 ? optionalParams : "");
+            console.log("[" + this.id + "]: " + message, ...optionalParams);
         }
     }
 }

@@ -101,7 +101,7 @@ class RequestVoteParameters extends RPCParameters {
      * @returns {RequestVoteParameters} The instantiated new RequestVoteParamters for a response.
      */
     static forResponse(senderId, term, voteGranted){
-        return new AppendEntriesParameters(senderId, term, true, undefined, undefined, voteGranted);
+        return new RequestVoteParameters(senderId, term, true, undefined, undefined, voteGranted);
     }
 }
 

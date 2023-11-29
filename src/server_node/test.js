@@ -22,17 +22,3 @@ for(let i = 0; i < nNodes; i++){
 }
 
 nodes.forEach((e) => e.start());
-
-// import { createServer } from "http"
-
-// const host = 'localhost';
-// const port = 8000;
-
-// const server = createServer((req, res) => {
-//     res.write("TEST");
-//     res.end();
-// });
-
-// server.listen(port, host, () => {
-//     console.log(`Server is running on http://${host}:${port}`);
-// });

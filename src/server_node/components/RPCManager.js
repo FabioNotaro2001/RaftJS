@@ -24,7 +24,6 @@ export class RPCManager {
      * @param {SocketCl} receiver Destination server. 
      * @param {String} rpcType Type of RPC to be sent to the receiver.
      * @param {RPCParameters} rpcParameters Parameters useful for the RPC.
-     * @returns {Boolean} Returss True if..., else false.
      */
     sendTo(receiver, rpcType, rpcParameters) {
         receiver.emit(rpcType, rpcParameters);
@@ -53,8 +52,6 @@ export class RPCManager {
         this.sendAll(RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(this.currentId, term, prevLogIndex, prevLogTerm, entries, leaderCommit));
     }
 
-    // FIXME: remove candidateId arguments.
-
     /**
      * RPC request for appending entries and log replication in a single node.
      * @param {SocketCl} receiver 
@@ -75,18 +72,17 @@ export class RPCManager {
      * @param {Boolean} success True if follower contained entry matching revLogIndex and prevLogTerm.
      * @param {Number} matchIndex Index of highest log entry known to be replicated on follower's server.
      */
-    sendReplicationResponse(receiver, term, success, matchIndex) {
-        this.sendTo(receiver, AppendEntriesParameters.forResponse(this.currentId, term, success, matchIndex));
+    sendReplicationResponse(receiver, term, success, commitIndex, lastApplied) {
+        this.sendTo(receiver, RPCType.APPENDENTRIES, AppendEntriesParameters.forResponse(this.currentId, term, success, commitIndex, lastApplied));
     }
     
     /**
      * RPC request made by a candidate for requesting a new leader election.
      * @param {Number} term Candidate’s term.
-     * @param {Number} candidateId Candidate requesting vote.
      * @param {Number} lastLogIndex Index of candidate’s last log entry.
      * @param {Number | null} lastLogTerm Term of candidate’s last log entry.
      */
-    sendElectionNotice(term, candidateId, lastLogIndex, lastLogTerm) {
+    sendElectionNotice(term, lastLogIndex, lastLogTerm) {
         this.sendAll(RPCType.REQUESTVOTE, RequestVoteParameters.forRequest(this.currentId, term, lastLogIndex, lastLogTerm));
     }
 
@@ -94,11 +90,10 @@ export class RPCManager {
      * RPC request made by a candidate for requesting a new leader election to a single node.
      * @param {SocketCl} receiver 
      * @param {Number} term Candidate’s term.
-     * @param {Number} candidateId Candidate requesting vote.
      * @param {Number} lastLogIndex Index of candidate’s last log entry.
      * @param {Number | null} lastLogTerm Term of candidate’s last log entry.
      */
-    sendElectionNoticeTo(receiver, term, candidateId, lastLogIndex, lastLogTerm) {
+    sendElectionNoticeTo(receiver, term, lastLogIndex, lastLogTerm) {
         this.sendTo(receiver, RPCType.REQUESTVOTE, RequestVoteParameters.forRequest(this.currentId, term, lastLogIndex, lastLogTerm));
     }
     

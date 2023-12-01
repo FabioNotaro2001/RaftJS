@@ -233,6 +233,11 @@ export class RaftNode {
         this.waitForLeaderTimeout();    // Waits before attempting to start the first ever election.
     }
 
+    // FIXME: on replication request, client updates commitIndex, THEN if commitIndex > lastApplied, applies all log entries from lastApplied + 1 to commitIndex then updates lastApplied.
+    // FIXME: response only needs success
+    // FIXME: follow directives in the Rules for Leaders section at page 4 of the paper.
+
+
     /**
      * Stops the node gracefully by closing all connections.
      */

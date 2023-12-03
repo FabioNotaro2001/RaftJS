@@ -11,6 +11,9 @@ class RPCParameters {
         if(this.constructor == RPCParameters){
             throw new Error("Cannot instantiate the class!");
         }
+        /**
+         * Node id of the sender.
+         */
         this.senderId = senderId;
         this.term = term;
         this.isResponse = isResponse;
@@ -27,18 +30,14 @@ class AppendEntriesParameters extends RPCParameters {
      * @param {LogRecord[]} entries Log entries to store.
      * @param {Number} leaderCommit Leader’s commitIndex.
      * @param {Boolean} success True if follower contained entry matching prevLogIndex and prevLogTerm. Use only if is response = true.
-     * @param {Number} commitIndex Use only if is response = true. 
-     * @param {Number} lastApplied Use only if is response = true. 
      */
-    constructor(senderId, term, isResponse, prevLogIndex, prevLogTerm, entries, leaderCommit, success, commitIndex, lastApplied) {
+    constructor(senderId, term, isResponse, prevLogIndex, prevLogTerm, entries, leaderCommit, success) {
         super(senderId, term, isResponse);
         this.prevLogIndex = prevLogIndex;
         this.prevLogTerm = prevLogTerm;
         this.entries = entries;
         this.leaderCommit = leaderCommit;
         this.success = success;
-        this.commitIndex = commitIndex;
-        this.lastApplied = lastApplied;
     }
 
     /**
@@ -52,19 +51,17 @@ class AppendEntriesParameters extends RPCParameters {
      * @returns {AppendEntriesParameters} The instantiated new AppendEntriesParameters for a request.
      */
     static forRequest(senderId, term, prevLogIndex, prevLogTerm, entries, leaderCommit){
-        return new AppendEntriesParameters(senderId, term, false, prevLogIndex, prevLogTerm, entries, leaderCommit, undefined, undefined, undefined);
+        return new AppendEntriesParameters(senderId, term, false, prevLogIndex, prevLogTerm, entries, leaderCommit, undefined);
     }
 
     /**
      * Static function that simplifies the call of AppendEntriesParameters in case of a response.
      * @param {Number} term Sender's term.
      * @param {Boolean} success True if follower contained entry matching prevLogIndex and prevLogTerm. Use only if is response = true.
-     * @param {Number} commitIndex  
-     * @param {Number} lastApplied 
      * @returns {AppendEntriesParameters} The instantiated new AppendEntriesParameters for a response.
      */
-    static forResponse(senderId, term, success, commitIndex, lastApplied){
-        return new AppendEntriesParameters(senderId, term, true, undefined, undefined, undefined, undefined, success, commitIndex, lastApplied);
+    static forResponse(senderId, term, success){
+        return new AppendEntriesParameters(senderId, term, true, undefined, undefined, undefined, undefined, success);
     }
 }
 

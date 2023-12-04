@@ -1,11 +1,54 @@
-import express from 'express';
+import express, { response } from 'express';
 import path from 'path';
 import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser';
-
+import { Socket as SocketCl, io } from "socket.io-client" 
 
 const app = express();
 const port = 5000;
+
+const ports = new Map();
+ports.set("Node1", 15001);
+ports.set("Node2", 15003);
+ports.set("Node3", 15005);
+ports.set("Node4", 15007);
+ports.set("Node5", 15009);
+
+/** @type {SocketCl} */
+let sock = null;
+let leaderFound = false;
+
+let arr = [...ports.keys()];
+let host = null;
+
+//TODO Gestire disconnessioni e connessioni a nuovo leader.
+function connectionRaft(){
+    let valore = arr[Math.round(Math.random() * arr.length)];
+    host = "127.0.0.1:"+ports.get(valore);
+    do{
+        sock = io("ws://" + host, {
+                        autoConnect: false,
+                        reconnection: true,
+                        reconnectionAttempts: 5,
+                        reconnectionDelay: 1000
+                    });
+        sock.connect();
+        if(sock.connected){
+            sock.emitWithAck("isLeader").then( (response) => {
+                if(!response.isLeader){
+                    sock.close();
+                    host = "127.0.0.1:"+ports.get(response.leaderId);
+                } else {
+                    leaderFound = true;
+                }
+            });
+        }else{
+            throw new Error("Non mi sono connesso.");
+        }
+    }while(!leaderFound);
+}
+
+connectionRaft();
 
 app.use(cookieParser());
 app.use(bodyParser.json());
@@ -17,6 +60,7 @@ app.use("/res/",express.static(path.join(__dirname,"res")));
 
 app.post("/createuser", (req, res) => {
     // TODO Aggiunta dell'utente al DB se ha successo restituisci 200 se no l'errore.
+    console.log(req);
     res.sendStatus(201);
 });
 

@@ -22,30 +22,42 @@ let arr = [...ports.keys()];
 let host = null;
 
 //TODO Gestire disconnessioni e connessioni a nuovo leader.
-function connectionRaft(){
-    let valore = arr[Math.round(Math.random() * arr.length)];
-    host = "127.0.0.1:"+ports.get(valore);
+async function connectionRaft(){
+    let randomNodeId = arr[Math.round(Math.random() * arr.length)];
+    host = "127.0.0.1:"+ports.get(randomNodeId);
     do{
+        let promiseResolve;
+        console.log("Rifatto!");
+        /** @type {Promise<any>} */
+        let waiting = new Promise((resolve) => {promiseResolve = resolve;});
+        console.log(host);
         sock = io("ws://" + host, {
                         autoConnect: false,
-                        reconnection: true,
-                        reconnectionAttempts: 5,
-                        reconnectionDelay: 1000
-                    });
+                        reconnection: false,
+                        timeout: 5000
+        });
         sock.connect();
-        if(sock.connected){
-            sock.emitWithAck("isLeader").then( (response) => {
+        sock.on("connect", () => {
+            sock.emit("isLeader", (response) => {
                 if(!response.isLeader){
+                    console.log("Leader is " + response.leaderId);
                     sock.close();
-                    host = "127.0.0.1:"+ports.get(response.leaderId);
+                    if(response.leaderId){
+                        host = "127.0.0.1:" + ports.get(response.leaderId);
+                    } else {
+                        randomNodeId = arr[Math.round(Math.random() * arr.length)];
+                        host = "127.0.0.1:" + ports.get(randomNodeId);
+                    }
                 } else {
                     leaderFound = true;
                 }
+                promiseResolve();
             });
-        }else{
-            throw new Error("Non mi sono connesso.");
-        }
+        })
+
+        await waiting;
     }while(!leaderFound);
+    console.log("Connected!");
 }
 
 connectionRaft();

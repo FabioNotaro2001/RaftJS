@@ -1,9 +1,7 @@
 import { CommandType } from "../enums/CommandType.js";
 import { RaftNode } from "./RaftNode.js";
-import { createServer, Server as HTTPServer } from "http";
 import { Server } from "socket.io";
-
-//TODO Gestire l'evento isLeader, deve rispondere con un oggetto che contine i campi isLeader booleano e leaderId che è stringa o null.
+import { State } from "../enums/State.js";
 
 export class WebServerManager{
     /**
@@ -27,6 +25,12 @@ export class WebServerManager{
             socket.on(CommandType.NEW_AUCTION, ([args, callback]) => this.onRequest(CommandType.NEW_AUCTION, args, callback));
             socket.on(CommandType.NEW_BID, ([args, callback]) => this.onRequest(CommandType.NEW_BID, args, callback));
             socket.on(CommandType.CLOSE_AUCTION, ([args, callback]) => this.onRequest(CommandType.CLOSE_AUCTION, args, callback));
+            socket.on("isLeader", (callback) => {
+                callback({
+                    isLeader: this.raftNode.state == State.LEADER,
+                    leaderId: this.raftNode.state == State.LEADER ? null : this.raftNode.currentLeaderId
+                });
+            })
         });
 
         

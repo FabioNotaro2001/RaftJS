@@ -12,8 +12,6 @@ import { WebServerManager } from "./WebServerManager.js";
 
 // const MAX_ENTRIES_IN_REQUEST = 10;  // Max number of request that can be put together in a single request.
 
-// TODO: force leader to stop doing leader things and check if new election does things as it should.
-
 /*
 NOTA: Quando una entry del log viene applicata al db, il leader usa il callback per notificare il client web del risultato dell'operazione. Qualora
     il server non riesca a rispondere per qualsiasi motivo, il client non riceverà risposta perché le funzioni di callback non possono essere serializzate

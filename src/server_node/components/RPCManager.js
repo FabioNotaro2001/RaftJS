@@ -13,14 +13,15 @@ export class RPCManager {
      * @param {Map<String, SocketCl>[]} sockets Map from IDs to sockets.
      * @param {String} nodeId Id of the node linked to this manager instance.
      */
-    constructor(sockets, nodeId) {
+    constructor(sockets, nodeId){
         this.sockets = sockets;
         this.currentId = nodeId;
     }
 
+
     /**
      * Send a specified RPC and its parameters to a specified destination server.
-     * @param {SocketCl} receiver Destination server.
+     * @param {SocketCl} receiver Destination server. 
      * @param {String} rpcType Type of RPC to be sent to the receiver.
      * @param {RPCParameters} rpcParameters Parameters useful for the RPC.
      */
@@ -31,21 +32,21 @@ export class RPCManager {
     /**
      * Send a specified RPC and its parameters to all other destination servers (a sort of broadcast of RPC).
      * @param {RPCType} rpcType Type of RPC to be sent to the list of other servers.
-     * @param {RPCParameters} rpcParameters Parameters useful for the RPC.
+     * @param {RPCParameters} rpcParameters Parameterrs useful for the RPC.
      */
     sendAll(rpcType, rpcParameters) {
         this.sockets.forEach((s, _) => {
             s.emit(rpcType, rpcParameters);
-        });
+        })
     }
 
     /**
      * RPC request for appending entries and log replication.
      * @param {Number} term Leader's current term.
      * @param {Number} prevLogIndex Index of log entry immediately preceding new ones.
-     * @param {Number | null} prevLogTerm Term of prevLogIndex entry.
+     * @param {Number | null} prevLogTerm Term of prevLogIndex entry
      * @param {LogRecord[]} entries Log entries to store.
-     * @param {Number} leaderCommit Leader’s commitIndex.
+     * @param {Number} leaderCommit Leader’s commitIndex
      */
     sendReplication(term, prevLogIndex, prevLogTerm, entries, leaderCommit) {
         this.sendAll(RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(this.currentId, term, prevLogIndex, prevLogTerm, entries, leaderCommit));
@@ -53,17 +54,17 @@ export class RPCManager {
 
     /**
      * RPC request for appending entries and log replication in a single node.
-     * @param {SocketCl} receiver
+     * @param {SocketCl} receiver 
      * @param {Number} term Leader's current term.
      * @param {Number} prevLogIndex Index of log entry immediately preceding new ones.
-     * @param {Number | null} prevLogTerm Term of prevLogIndex entry.
+     * @param {Number | null} prevLogTerm Term of prevLogIndex entry
      * @param {LogRecord[]} entries Log entries to store.
-     * @param {Number} leaderCommit Leader’s commitIndex.
+     * @param {Number} leaderCommit Leader’s commitIndex
      */
     sendReplicationTo(receiver, term, prevLogIndex, prevLogTerm, entries, leaderCommit) {
         this.sendTo(receiver, RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(this.currentId, term, prevLogIndex, prevLogTerm, entries, leaderCommit));
     }
-
+    
     /**
      * RPC response for appending entries and log replication.
      * @param {SocketCl} receiver Socket of the server who sent the replication request (the leader).
@@ -74,7 +75,7 @@ export class RPCManager {
     sendReplicationResponse(receiver, term, success, commitIndex, lastApplied) {
         this.sendTo(receiver, RPCType.APPENDENTRIES, AppendEntriesParameters.forResponse(this.currentId, term, success, commitIndex, lastApplied));
     }
-
+    
     /**
      * RPC request made by a candidate for requesting a new leader election.
      * @param {Number} term Candidate’s term.
@@ -87,7 +88,7 @@ export class RPCManager {
 
     /**
      * RPC request made by a candidate for requesting a new leader election to a single node.
-     * @param {SocketCl} receiver
+     * @param {SocketCl} receiver 
      * @param {Number} term Candidate’s term.
      * @param {Number} lastLogIndex Index of candidate’s last log entry.
      * @param {Number | null} lastLogTerm Term of candidate’s last log entry.
@@ -95,7 +96,7 @@ export class RPCManager {
     sendElectionNoticeTo(receiver, term, lastLogIndex, lastLogTerm) {
         this.sendTo(receiver, RPCType.REQUESTVOTE, RequestVoteParameters.forRequest(this.currentId, term, lastLogIndex, lastLogTerm));
     }
-
+    
     /**
      * RPC response made by a server for voting during a new leader election.
      * @param {SocketCl} receiver Socket of the candidate who started the election.
@@ -104,19 +105,19 @@ export class RPCManager {
     sendVote(receiver, term, voteGranted) {
         this.sendTo(receiver, RPCType.REQUESTVOTE, RequestVoteParameters.forResponse(this.currentId, term, voteGranted));
     }
-
+    
     /**
      * Send a snapshot RPC message to all other nodes.
      */
     sendSnapshotMessage() {
-        this.sendAll(RPCType.SNAPSHOT, SnapshotParameters.forRequest(/* ... */));
-    }
+        this.sendAll(RPCType.SNAPSHOT, SnapshotParameters.forRequest(/* ... */))
+    } 
 
     /**
      * Send a snapshot RPC response to a specified receiver.
      * @param {SocketCl} receiver Socket of the node to receive the snapshot response.
      */
     sendSnapshotResponse(receiver) {
-        this.sendTo(receiver, RPCType.SNAPSHOT, SnapshotParameters.forResponse(/* ... */));
-    }
+        this.sendTo(receiver, RPCType.SNAPSHOT, SnapshotParameters.forResponse(/* ... */))
+    } 
 }

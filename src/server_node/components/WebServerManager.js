@@ -3,30 +3,24 @@ import { RaftNode } from "./RaftNode.js";
 import { Server } from "socket.io";
 import { State } from "../enums/State.js";
 
-/**
- * Manages the web server for handling client requests.
- */
-export class WebServerManager {
+export class WebServerManager{
     /**
-     * Creates an instance of WebServerManager.
-     * @param {RaftNode} raftNode - The RaftNode instance associated with this web server manager.
-     * @param {*} webServerPort - The port on which the web server will run.
+     * 
+     * @param {RaftNode} raftNode 
+     * @param {*} webServerPort 
      */
-    constructor(raftNode, webServerPort) {
+    constructor(raftNode, webServerPort){
         this.raftNode = raftNode;
         this.webServerPort = webServerPort;
-
+        
         /** @type {Server | null} */
         this.webServerServer = null;
     }
 
-    /**
-     * Starts the web server and sets up event handlers for incoming connections.
-     */
-    start() {
+    start(){
         this.webServerServer = new Server();
 
-        this.webServerServer.on("connection", socket => {
+        this.webServerServer.on("connection", socket => {    // Handle connections to this node.
             socket.on(CommandType.NEW_USER, ([args, callback]) => this.onRequest(CommandType.NEW_USER, args, callback));
             socket.on(CommandType.NEW_AUCTION, ([args, callback]) => this.onRequest(CommandType.NEW_AUCTION, args, callback));
             socket.on(CommandType.NEW_BID, ([args, callback]) => this.onRequest(CommandType.NEW_BID, args, callback));
@@ -36,46 +30,41 @@ export class WebServerManager {
                     isLeader: this.raftNode.state == State.LEADER,
                     leaderId: this.raftNode.state == State.LEADER ? null : this.raftNode.currentLeaderId
                 });
-            });
+            })
         });
 
+        
         this.webServerServer.listen(this.webServerPort);
     }
 
-    /**
-     * Stops the web server and disconnects sockets.
-     */
-    stop() {
+    stop(){
         this.webServerServer.close();
         this.webServerServer.disconnectSockets(true);
     }
 
-    /**
-     * Handles incoming requests from clients, logs the request, checks match index, and resets the heartbeat timeout.
-     * @param {string} commandType - Type of the command received.
-     * @param {object} args - Arguments associated with the command.
-     * @param {function} callback - Callback function associated with the command.
-     */
+    // Functions that handle the various requests that can be made on the database.
+    // For every request add it on the log,  check the match index and reset the heartbeat timeout.
     onRequest(commandType, args, callback) {
         let prevLogIndex = this.log.length - 1;
         let prevLogTerm = this.log.at(-1) ? this.log.at(-1).term : null;
 
         switch (commandType) {
-            case CommandType.NEW_USER:
+            case CommandType.NEW_USER: {
                 this.log.push(new LogRecord(this.currentTerm, commandType, new UserCreateData(args.username, args.password), callback));
                 break;
-
-            case CommandType.NEW_AUCTION:
+            }
+            case CommandType.NEW_AUCTION: {
                 this.log.push(new LogRecord(this.currentTerm, commandType, new AuctionCreateData(args.user, args.startDate, args.objName, args.objDesc, args.startPrice), callback));
                 break;
-
-            case CommandType.NEW_BID:
+            }
+            case CommandType.NEW_BID: {
                 this.log.push(new LogRecord(this.currentTerm, commandType, new BidCreateData(args.user, args.auctionId, args.value), callback));
                 break;
-
-            case CommandType.CLOSE_AUCTION:
+            }
+            case CommandType.CLOSE_AUCTION: {
                 this.log.push(new LogRecord(this.currentTerm, commandType, new AuctionCloseData(args.auctionId, args.closingDate), callback));
                 break;
+            }
         }
 
         let node = this;

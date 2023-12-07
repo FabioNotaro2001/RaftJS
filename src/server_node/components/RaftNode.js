@@ -10,6 +10,15 @@ import { DBManager } from "./DBManager.js";
 import { CommandType } from "../enums/CommandType.js";
 import { WebServerManager } from "./WebServerManager.js";
 
+// const MAX_ENTRIES_IN_REQUEST = 10;  // Max number of request that can be put together in a single request.
+
+/*
+NOTA: Quando una entry del log viene applicata al db, il leader usa il callback per notificare il client web del risultato dell'operazione. Qualora
+    il server non riesca a rispondere per qualsiasi motivo, il client non riceverà risposta perché le funzioni di callback non possono essere serializzate
+    in JSON.
+ */
+
+
 export class RaftNode {
     /**
      * Creates a new node for the Raft consensus protocol cluster.
@@ -28,54 +37,117 @@ export class RaftNode {
      * @param {String} databaseName Name of the database.
      * @param {Map<String, String>} otherNodes Pairs IPAddress-IdNode for the other nodes in the cluster.
      * @param {boolean} [debug=false] Flag indicating whether debugging is enabled.
-     * @param {boolean} [disabledDB=false] Flag indicating whether the database is disabled.
      */
 
     constructor(id, portNodeProt, portWebServer, minLeaderTimeout, maxLeaderTimeout, minElectionTimeout, maxElectionTimeout, minElectionDelay, heartbeatTimeout, hostForDB, userForDB, passwordForDB, databaseName, otherNodes, debug = false, disabledDB = false) {
-        // Initialize node properties with the provided parameters.
+        /** @type {String} */
         this.id = id;
+        /** @type {Number} */
         this.portNodeProt = portNodeProt;
+        /** @type {Boolean} */
         this.started = false;
+        /** @type {String} */
         this.state = State.FOLLOWER;
+        /** @type {Number} */
         this.currentTerm = 0;
+        /** @type {String} */
         this.votedFor = null;
+        /** @type {Number} */
         this.votesGathered = 0;
+        /** @type {LogRecord[]} */
         this.log = [];
+        /** @type {Number} */
         this.commitIndex = -1;
+        /** @type {Number} */
         this.lastApplied = -1;
+        /** @type {Number} */
         this.minLeaderTimeout = minLeaderTimeout;
+        /** @type {Number} */
         this.maxLeaderTimeout = maxLeaderTimeout;
+        /** @type {Number} */
         this.minElectionTimeout = minElectionTimeout;
+        /** @type {Number} */
         this.maxElectionTimeout = maxElectionTimeout;
+        /** @type {Number} */
         this.minElectionDelay = minElectionDelay;
+        /** @type {Number} */
         this.heartbeatTimeout = heartbeatTimeout;
 
-        // Additional properties for simulation and management.
         this.simulateLeaderDisconnection = false;
         this.clientRequestInterval = null;
 
-        // Initialize or disable database manager based on the flag.
         if (!disabledDB) {
+            /** @type {DBManager} */
             this.dbManager = new DBManager(hostForDB, userForDB, passwordForDB, databaseName);
         }
 
+        /** @type {WebServerManager} */
         this.webServerManager = new WebServerManager(this, portWebServer);
 
-        // Leader-only properties.
+        /**
+         * Leader-only.
+         * 
+         * Index of the next log entry to send to each follower node, initialized after every election to the index of the last record in the leader's log +1.
+         * @type {Map<String, Number>}
+         */
         this.nextIndex = new Map();
+        /**
+         * Leader-only.
+         * 
+         * Index of highest log entry known to be replicated on each follower node. Reinitialized after every election. 
+         * @type {Map<String, Number>}
+         */
         this.matchIndex = new Map();
+        /**
+         * Leader-only.
+         * 
+         * Index of highest log entry known to be sent to each follower node. Reinitialized after every election. 
+         * @type {Map<String, Number>}
+         */
         this.lastSent = new Map();
+        /**
+         * Contains pairs IP Address - Node id 
+         * @type {Map<String, String>}
+         */
         this.otherNodes = otherNodes;
+
+        /** @type {Number} */
         this.clusterSize = otherNodes.size + 1;
+
+        /** @type {String | null} */
         this.currentLeaderId = null;
+
+        /** @type {Map<String, Number | null>} */
         this.heartbeatTimeouts = new Map();
+
+        /** @type {Server | null} */
         this.protocolServer = null;
+
+        /** 
+         * Maps the socket id to the corresponding node id. 
+         * @type {Map<String, String>} 
+        */
         this.socketToNodeId = new Map();
+
+        /**
+         * Maps the node id to the corresponding socket.
+         *  @type {Map<String, SocketCl>} 
+        */
         this.sockets = new Map();
+
+        /** @type {Number} */
         this.leaderTimeout = null;
+
+        /** @type {Number} */
         this.electionTimeout = null;
+
+        /** @type {RPCManager} */
         this.rpcManager = new RPCManager(this.sockets, this.id);
+
+        /** @type {Boolean} */
         this.debug = debug;
+
+        /** @type {Boolean} */
         this.disabledDB = disabledDB;
     }
 
@@ -83,58 +155,52 @@ export class RaftNode {
      * Starts the node.
      */
     start() {
-        // Check if the node is already active.
         if (this.started) {
             throw new Error("Node is already active.");
         }
 
-        // Log starting message.
         this.debugLog("Starting node...");
 
-        // Connect to the database if it is not disabled.
         if (!this.disabledDB) {
+            // Connect the node to the database through its DBmanager.
             this.dbManager.connect();
         }
 
-        // Create a protocol server for handling connections.
         this.protocolServer = new Server({
             pingTimeout: 1000 * 60 * 10,
             pingInterval: 1000 * 60 * 10
+
         });
 
         let serverNode = this;
 
-        // Handle incoming connections to this node.
-        this.protocolServer.on("connection", socket => {
-            // Check if the connection is allowed based on the configuration.
+
+        this.protocolServer.on("connection", socket => {    // Handle connections to this node.
             if (serverNode.sockets.get(socket.handshake.auth.token) != undefined) {
                 socket.emit("accept");
             } else {
-                socket.disconnect(true); // Disconnect if the connection is not in the configuration.
+                socket.disconnect(true);    // Connections from addresses not in the configuration are closed immediately.
                 return;
             }
 
-            // Set up listeners for different RPC types.
             socket.on(RPCType.APPENDENTRIES, args => this.onAppendEntriesMessage(args));
             socket.on(RPCType.REQUESTVOTE, args => this.onRequestVoteMessage(args));
+            // socket.on(RPCType.SNAPSHOT, args => this.onSnapshotMessage(socket, args));
 
-            // Initialize heartbeat timeout for the connected socket.
             serverNode.heartbeatTimeouts.set(serverNode.socketToNodeId.get(socket.id), null);
         });
 
-        // Start listening on the protocol server port.
         this.protocolServer.listen(this.portNodeProt);
         this.debugLog("Protocol server listening on port " + this.portNodeProt);
 
-        // Start the web server.
         this.webServerManager.start();
         this.debugLog("Web server listening on port " + this.webServerManager.webServerPort);
 
-        // Connect to other nodes in the cluster.
+        // Connect to other nodes.
         this.otherNodes.forEach((id, host) => {
             this.debugLog("Connecting to " + host);
 
-            // Create a socket for the connection.
+
             let sock = io("ws://" + host, {
                 autoConnect: false,
                 reconnection: true,
@@ -143,12 +209,11 @@ export class RaftNode {
                 auth: { token: this.id }
             });
 
-            // Connect the socket.
             sock.connect();
 
             let accepted = false;
+            // let shutdown = false;
 
-            // Set up event listeners for the socket.
             sock.on("connect", () => {
                 this.debugLog("Connection established with %s.", id);
             });
@@ -161,6 +226,10 @@ export class RaftNode {
             sock.on("connect_error", (err) => {
                 this.debugLog("Failed to connect: " + err.message);
             });
+
+            // sock.on("shutdown", () => {
+            //     shutdown = true;
+            // });
 
             sock.on("disconnect", (reason) => {
                 if (reason === "io server disconnect") {         // Disconnected because not in configuration.
@@ -194,7 +263,7 @@ export class RaftNode {
         this.debugLog("Stopping node...");
 
         if (!this.disabledDB) {
-            // Disconnect the node from the database through its DBmanager.
+            // Disconnect the node to the database through its DBmanager.
             this.dbManager.disconnect();
         }
 
@@ -222,7 +291,7 @@ export class RaftNode {
                     if (!this.disabledDB) {
                         res = this.dbManager.queryAddNewUser(data.username, data.password);
                     }
-                    this.debugLog("Added a new user to the database.");
+                    this.debugLog("Added new user to database.");
                     break;
                 }
                 case CommandType.NEW_AUCTION: {
@@ -232,7 +301,7 @@ export class RaftNode {
                     if (!this.disabledDB) {
                         res = this.dbManager.queryAddNewAuction(data.user, data.startDate, data.objName, data.objDesc, data.startPrice);
                     }
-                    this.debugLog("Added a new auction to the database.");
+                    this.debugLog("Added new auction to database.");
                     break;
                 }
                 case CommandType.CLOSE_AUCTION: {
@@ -242,7 +311,7 @@ export class RaftNode {
                     if (!this.disabledDB) {
                         res = this.dbManager.queryCloseAuction(data.auctionId, data.closingDate);
                     }
-                    this.debugLog("Closed an auction in the database.");
+                    this.debugLog("Closed auction in database.");
                     break;
                 }
                 case CommandType.NEW_BID: {
@@ -252,7 +321,7 @@ export class RaftNode {
                     if (!this.dbManager) {
                         res = this.dbManager.queryAddNewBid(data.user, data.auctionId, data.value);
                     }
-                    this.debugLog("Added a new bid to the database.");
+                    this.debugLog("Added new bid to database.");
                     break;
                 }
                 default: {
@@ -261,13 +330,13 @@ export class RaftNode {
             }
 
             if (logEntry.callback) {
-                logEntry.callback(res); // Fulfill the promise to the web server by sending another promise.
-                logEntry.callback = null;
+                logEntry.callback(res); // Fulfill promise to web server by sending another promise.
+                logEntry.callback = null; 
             } else {
                 this.debugLog("Client COMMIT");
             }
         } else {
-            throw new Error("Log entry at index " + index + " is undefined.");
+            throw new Error("Log entry at index " + index + "is undefined.");
         }
     }
 
@@ -280,7 +349,7 @@ export class RaftNode {
                 this.applyLogEntry(i);
             }
 
-            this.debugLog("Committed %d log entries to the database.", this.commitIndex - this.lastApplied);
+            this.debugLog("Committed %d log entries to database.", this.commitIndex - this.lastApplied);
             this.lastApplied = this.commitIndex;
         }
     }
@@ -291,16 +360,13 @@ export class RaftNode {
      */
     onAppendEntriesMessage(args) {
         let senderSocket = this.sockets.get(args.senderId);
-        if (args.term > this.currentTerm) {
-            // Contact from a more recent leader.
+        if (args.term > this.currentTerm) {     // Contact from a more recent leader.
             switch (this.state) {
-                case State.LEADER: {
-                    // Stops waiting for heartbeat timeout because it's no longer the leader.
+                case State.LEADER: {        // Stops waiting for heartbeat timeout because it's no longer the leader.
                     this.stopHeartbeatTimeout();
                     break;
                 }
-                case State.CANDIDATE: {
-                    // Stops waiting for heartbeat and election timeout because it's no longer a candidate.
+                case State.CANDIDATE: {     // Stops waiting for heartbeat and election timeout because it's no longer a candidate.
                     this.stopHeartbeatTimeout();
                     this.stopElectionTimeout();
                     break;
@@ -312,6 +378,7 @@ export class RaftNode {
             this.currentLeaderId = args.isResponse ? null : args.senderId;
             this.currentTerm = args.term;
             this.resetLeaderTimeout();
+
 
             this.debugLog("New leader detected. Changing to %s state...", State.FOLLOWER);
         }
@@ -326,8 +393,8 @@ export class RaftNode {
                 }
 
                 if (args.term < this.currentTerm) {
-                    this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false);
-                    this.debugLog("Received %s message from %s with a previous term %d -> refused.", RPCType.APPENDENTRIES, args.senderId, args.term);
+                    this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false);    
+                    this.debugLog("Received %s message from %s with previous term %d -> refused.", RPCType.APPENDENTRIES, args.senderId, args.term);
                     this.resetLeaderTimeout();
                     break;
                 }
@@ -339,23 +406,22 @@ export class RaftNode {
                     break;
                 }
 
-                if (this.currentLeaderId == null) {
-                    // Leader may not be known (see in case State.LEADER)
+                if (this.currentLeaderId == null) {            // Leader may not be known (see in case State.LEADER)
                     this.currentLeaderId = args.senderId;
                 }
 
                 if (args.entries.length > 0) {
                     args.entries.forEach((e, i) => {
                         let newEntryIndex = args.prevLogIndex + i + 1;
-                        if (this.log.length > 0 && (this.log[newEntryIndex] && this.log[newEntryIndex].term !== e.term)) {
-                            this.log.length = newEntryIndex; // Delete all records starting from the conflicting one.
+                        if (this.log.length > 0 && ( this.log[newEntryIndex] && this.log[newEntryIndex].term !== e.term)) {
+                            this.log.length = newEntryIndex;    // Delete all records starting from the conflicting one.
                             this.commitIndex = this.log.length - 1;
-                            this.debugLog("Conflicting entry/ies found and removed from the log. The log is now %d records long.", this.log.length);
+                            this.debugLog("Conflicting entry/ies found and removed from log. Log is now %d records long.", this.log.length);
                         }
                         this.log.push(e);
                     });
 
-                    this.debugLog("Added %d entries to the log. The log is now %d records long.", args.entries.length, this.log.length);
+                    this.debugLog("Added %d entries to log. Log is now %d records long.", args.entries.length, this.log.length);
                 }
 
                 if (args.leaderCommit > this.commitIndex) {
@@ -365,28 +431,25 @@ export class RaftNode {
                 this.applyLogEntries();
 
                 this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, true);
-                this.debugLog("Received \"%s\" request from %s with a term %d -> responded.", RPCType.APPENDENTRIES, args.senderId, args.term);
+                this.debugLog("Received \"%s\" request from %s with term %d -> responded.", RPCType.APPENDENTRIES, args.senderId, args.term);
                 this.resetLeaderTimeout();
                 break;
             }
             case State.LEADER: {
-                // This code block handles the AppendEntries RPC messages when the node is in the LEADER state.
 
-                // Check if the message is from an older leader and is no longer relevant.
+                // This message is sent by an older leader and is no longer relevant.
                 if (!args.isResponse) {
                     this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false, this.commitIndex, this.lastApplied);
-                    this.debugLog("Received \"%s\" request from %s with a previous term %d -> refused.", RPCType.APPENDENTRIES, args.senderId, args.term);
+                    this.debugLog("Received \"%s\" request from %s with previous term %d -> refused.", RPCType.APPENDENTRIES, args.senderId, args.term);
                 }
 
-                // If the leader was not rejected, update matchIndex, nextIndex, and commitIndex.
-                if (args.success) {
+                if (args.success) { // Leader was not rejected.
                     this.matchIndex.set(args.senderId, this.lastSent.get(args.senderId));
                     this.nextIndex.set(args.senderId, this.lastSent.get(args.senderId) + 1);
 
                     let prevLogIndex = this.nextIndex.get(args.senderId) - 1;
                     let prevLogTerm = prevLogIndex >= 0 ? this.log[prevLogIndex].term : null;
 
-                    // Calculate the new commitIndex based on a majority of matchIndex values.
                     let sortedIndexes = [...this.matchIndex.values()].sort();
                     let oldCommitIndex = this.commitIndex;
                     this.commitIndex = sortedIndexes[Math.floor(this.clusterSize / 2)];
@@ -394,7 +457,7 @@ export class RaftNode {
                         this.debugLog("Set commit index to %d", this.commitIndex);
                     }
 
-                    // Send missing entries to the node if any.
+                    // Sends missing entries to the node.
                     let missingEntries = this.log.slice(this.nextIndex.get(args.senderId));
                     if (missingEntries.length > 0) {
                         this.rpcManager.sendReplicationTo(senderSocket, this.currentTerm, prevLogIndex, prevLogTerm, missingEntries, this.commitIndex);
@@ -411,11 +474,9 @@ export class RaftNode {
                         this.debugLog("Received successful \"%s\" response from %s -> ignored (ok).", RPCType.APPENDENTRIES, args.senderId);
                     }
 
-                    // Apply log entries.
                     this.applyLogEntries();
-                } else {
-                    // Log conflict on the client: the server has to decrement nextIndex until there is no longer a log conflict.
-                    this.nextIndex.set(args.senderId, this.nextIndex.get(args.senderId) - 1); // Decrement next index and retry.
+                } else {    // Log conflict on client: server has to decrement nextIndex until there is no longer a log conflict.
+                    this.nextIndex.set(args.senderId, this.nextIndex.get(args.senderId) - 1);   // Decrement next index and retry.
 
                     let prevLogIndex = this.nextIndex.get(args.senderId) - 1;
                     let prevLogTerm = prevLogIndex >= 0 ? this.log[prevLogIndex].term : null;
@@ -435,38 +496,30 @@ export class RaftNode {
                 }
                 break;
             }
-
             case State.CANDIDATE: {
-                // If the node is in the CANDIDATE state, respond to the AppendEntries RPC message with rejection.
-                this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false, this.commitIndex, this.lastApplied);
-                this.debugLog("Received \"%s\" message from %s with an outdated term %d -> refused.", RPCType.APPENDENTRIES, args.senderId, args.term);
+                this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false, this.commitIndex, this.lastApplied); // The message is for a previous term and it is rejected.
+                this.debugLog("Received \"%s\" message from %s with outdated term %d -> refused.", RPCType.APPENDENTRIES, args.senderId, args.term);
                 break;
             }
-
             default: {
-                // Do nothing if the node is not in LEADER or CANDIDATE state.
                 break;
             }
         }
     }
 
     /**
- * Handles incoming RequestVote RPC messages.
- * @param {RequestVoteParameters} args The parameters of the RequestVote RPC.
- */
+     * Handles incoming RequestVote RPC messages.
+     * @param {RequestVoteParameters} args The parameters of the RequestVote RPC.
+     */
     onRequestVoteMessage(args) {
         let senderSocket = this.sockets.get(args.senderId);
-
-        // Check if the incoming term is greater than the current term.
-        if (args.term > this.currentTerm) {
+        if (args.term > this.currentTerm) {     // Contact from a more recent candidate.
             switch (this.state) {
-                case State.LEADER: {
-                    // Stops waiting for heartbeat timeout because it's no longer the leader.
+                case State.LEADER: {            // Stops waiting for heartbeat timeout because it's no longer the leader.
                     this.stopHeartbeatTimeout();
                     break;
                 }
-                case State.CANDIDATE: {
-                    // Stops waiting for heartbeat and election timeout because it's no longer a candidate.
+                case State.CANDIDATE: {         // Stops waiting for heartbeat and election timeout because it's no longer a candidate.
                     this.stopHeartbeatTimeout();
                     this.stopElectionTimeout();
                     break;
@@ -513,18 +566,16 @@ export class RaftNode {
                         if (++this.votesGathered > Math.floor(this.clusterSize / 2)) {
                             this.debugLog("Majority obtained -> changing state to leader and notifying other nodes.");
                             this.state = State.LEADER;
-
-                            // Reset state for all nodes in the cluster.
+                            
                             this.sockets.forEach((_, nodeId) => {
                                 this.matchIndex.set(nodeId, -1);
                                 this.nextIndex.set(nodeId, this.log.length);
                                 this.lastSent.set(nodeId, this.log.length - 1);
                             });
 
-                            // Send initial replication message to all nodes.
                             this.rpcManager.sendReplication(this.currentTerm, this.log.length - 1, (this.log.at(-1) != null ? this.log.at(-1).term : null), [], this.commitIndex);
 
-                            this.debugLog("Sending new heartbeat: %s", JSON.stringify({
+                            this.debugLog("Sending new heartbeat : %s", JSON.stringify({
                                 currentTerm: this.currentTerm,
                                 prevLogIndex: this.log.length - 1,
                                 prevLogTerm: (this.log.at(-1) != null ? this.log.at(-1).term : null),
@@ -532,21 +583,19 @@ export class RaftNode {
                                 commitIndex: this.commitIndex
                             }));
 
-                            // Uncomment the following lines if leader actions need to be simulated.
                             // this.clientRequestInterval = setInterval(() => {
                             //     this.debugLog("Received client request!");
                             //     this.log.push(new LogRecord(this.currentTerm, CommandType.NEW_USER, new UserCreateData("fabio", "password"), () => { this.debugLog("Leader COMMIT"); }));
                             // }, 6000);
-
+                            
                             // this.simulateLeaderDisconnection = false;
                             // setTimeout(() => {
-                            //     this.simulateLeaderDisconnection = true;
+                            //     this.simulateLeaderDisconnection = true; 
                             //     this.debugLog("Leader stop responding.");
                             //     clearInterval(this.clientRequestInterval);
                             //     this.clientRequestInterval = null;
                             // }, 13000);
 
-                            // Reset timeouts.
                             this.resetHeartbeatTimeout();
                             this.stopElectionTimeout();
                         }
@@ -572,9 +621,6 @@ export class RaftNode {
         return; // Not implemented.
     }
 
-    /**
-     * Initiates a new election process.
-     */
     startNewElection() {
         this.leaderTimeout = null; // Timeout has expired.
 
@@ -582,72 +628,60 @@ export class RaftNode {
         this.currentTerm++;
         this.currentLeaderId = null;
         this.votesGathered = 1;
-
-        // Send election notice to all nodes in the cluster.
         this.rpcManager.sendElectionNotice(this.currentTerm, this.id, this.log.length - 1, this.log.at(-1) != null ? this.log.at(-1).term : null);
-
-        // Disable leader timeout and set timeouts for election and heartbeat.
-        this.stopLeaderTimeout();
-        this.resetElectionTimeout();
-        this.resetHeartbeatTimeout();
+        this.stopLeaderTimeout();       // Disables leader timeout.
+        this.resetElectionTimeout();    // Set a timeout in case the election doesn't end.
+        this.resetHeartbeatTimeout();   // Set a timeout in case other nodes do not respond.
     }
-
     /**
-     * Sets a timeout for communications from the leader.
+     * Set a timeout for communications from the leader.
+     * 
      * In case the timeout expires, starts a new election as a candidate.
      */
     waitForLeaderTimeout() {
         let extractedInterval = this.minLeaderTimeout + Math.random() * (this.maxLeaderTimeout - this.minLeaderTimeout);
         let node = this;
-
-        // Set leader timeout.
         this.leaderTimeout = setTimeout(() => {
-            node.debugLog("Leader timeout expired! Starting a new election...");
+            node.debugLog("Leader timeout expired! Starting new election...");
             node.startNewElection();
         }, extractedInterval);
     }
 
     /**
-     * Sets a timeout for the current election.
+     * Set a timeout for the current election.
+     * 
      * In case the timeout expires, starts a new election as a candidate.
      */
     waitForElectionTimeout() {
         let extractedInterval = this.minElectionTimeout + Math.random() * (this.maxElectionTimeout - this.minElectionTimeout);
         let node = this;
-
-        // Set election timeout.
         this.electionTimeout = setTimeout(() => {
-            node.debugLog("Election timeout expired! Starting a new election...");
+            node.debugLog("Election timeout expired! Starting new election...");
             node.startNewElection();
         }, extractedInterval)
     }
 
-
     /**
- * Set a timeout to wait for any heartbeat.
- * In case the timeout expires, sends another heartbeat of type depending on the current state.
- * @param {Number} matchIndex Index of the highest log entry known to be replicated on each follower node.
- * @param {String | null} nodeId The node to which we must send the heartbeat when the timeout expires. If null, the heartbeat is sent to all other nodes.
- */
+     * Set a timeout to wait for any heartbeat.
+     * 
+     * In case the timeout expires, sends another heartbeat of type depending on the current state.
+     * @param {Number} matchIndex Index of highest log entry known to be replicated on each follower node.
+     * @param {String | null} nodeId The node to which we must send the heartbeat when the timeout expires. If null, the heartbeat is sent to all other nodes.
+     */
     waitForHeartbeatTimeout(nodeId = null) {
-        // If leader disconnection simulation is active, return without setting the heartbeat timeout.
-        if (this.simulateLeaderDisconnection) {
+        if(this.simulateLeaderDisconnection){
             return;
         }
-
         let thisNode = this;
         let sendHeartbeat = null;
 
-        // Define the type of heartbeat message based on the current state.
-        if (thisNode.state === State.CANDIDATE) {
-            // The message sent is a vote request.
+        if (thisNode.state === State.CANDIDATE) {  // The message sent is a vote request.
             sendHeartbeat = (nodeId) => {
                 thisNode.rpcManager.sendElectionNoticeTo(thisNode.sockets.get(nodeId), thisNode.currentTerm, thisNode.id, thisNode.log.length - 1, thisNode.log.at(-1) != null ? thisNode.log.at(-1).term : null);
                 thisNode.debugLog("Sending new election heartbeat to node %s", nodeId);
                 thisNode.resetHeartbeatTimeout(nodeId);
             };
-        } else if (thisNode.state === State.LEADER) {
-            // The message sent is a replication request.
+        } else if (thisNode.state === State.LEADER) {    // The message sent is a replication request.
             sendHeartbeat = (nodeId) => {
                 let missingEntries = thisNode.log.slice(thisNode.nextIndex.get(nodeId) + 1);
                 let prevLogIndex = thisNode.nextIndex.get(nodeId) - 1;
@@ -663,15 +697,13 @@ export class RaftNode {
                 }));
                 thisNode.resetHeartbeatTimeout(nodeId);
             };
-        } else {
-            // Illegal state.
+        } else { // Illegal state.
             throw new Error("Cannot send heartbeat when in state " + Object.entries(State).find(e => e[1] === thisNode.state).at(0));
         }
 
-        // Set heartbeat timeout for the specified node or all other nodes.
-        if (nodeId != null) {
+        if (nodeId != null) { // Sends an heartbeat to a specified node.
             thisNode.heartbeatTimeouts.set(nodeId, setTimeout(() => sendHeartbeat(nodeId), thisNode.heartbeatTimeout));
-        } else {
+        } else { // Sends an heartbeat to all other nodes.
             thisNode.otherNodes.forEach((nodeId, _) => {
                 thisNode.heartbeatTimeouts.set(nodeId, setTimeout(() => sendHeartbeat(nodeId), thisNode.heartbeatTimeout));
             });
@@ -679,8 +711,8 @@ export class RaftNode {
     }
 
     /**
-     * Resets the leader timeout by stopping the current timeout and initiating a new one.
-     */
+    * Resets the leader timeout by stopping the current timeout and initiating a new one.
+    */
     resetLeaderTimeout() {
         this.stopLeaderTimeout();
         this.waitForLeaderTimeout();
@@ -713,7 +745,7 @@ export class RaftNode {
 
     /**
      * Stops the election timeout, preventing a new election from starting.
-     */
+    */
     stopElectionTimeout() {
         clearTimeout(this.electionTimeout);
         this.electionTimeout = null;
@@ -722,7 +754,7 @@ export class RaftNode {
     /**
      * Stops the heartbeat timeout for a specific node or all nodes.
      * @param {String | null} nodeId - The ID of the node for which to stop the heartbeat timeout. If null, stops all timeouts.
-     */
+    */
     stopHeartbeatTimeout(nodeId = null) {
         if (nodeId != null) {
             clearTimeout(this.heartbeatTimeouts.get(nodeId));
@@ -735,15 +767,9 @@ export class RaftNode {
         }
     }
 
-    /**
-     * Log a message to the console for debugging purposes if debugging is enabled.
-     * @param {string} message - The message to log.
-     * @param  {...any} optionalParams - Optional parameters to include in the log.
-     */
     debugLog(message, ...optionalParams) {
         if (this.debug) {
             console.log("[" + this.id + " (" + this.state + ")]: " + message, ...optionalParams);
         }
     }
-
 }

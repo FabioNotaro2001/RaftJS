@@ -299,7 +299,7 @@ export class RaftNode {
                     let data = logEntry.logData;
 
                     if (!this.disabledDB) {
-                        res = this.dbManager.queryAddNewAuction(data.user, data.startDate, data.objName, data.objDesc, data.startPrice);
+                        res = this.dbManager.queryAddNewAuction(data.username, data.startDate, data.objName, data.objDesc, data.startPrice);
                     }
                     this.debugLog("Added new auction to database.");
                     break;
@@ -319,7 +319,7 @@ export class RaftNode {
                     let data = logEntry.logData;
 
                     if (!this.dbManager) {
-                        res = this.dbManager.queryAddNewBid(data.user, data.auctionId, data.value);
+                        res = this.dbManager.queryAddNewBid(data.username, data.auctionId, data.value);
                     }
                     this.debugLog("Added new bid to database.");
                     break;

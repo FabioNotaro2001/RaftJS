@@ -35,15 +35,15 @@ export class UserCreateData {
 export class AuctionCreateData {
     /**
      * 
-     * @param {String} user 
+     * @param {String} username 
      * @param {Date} startDate 
      * @param {String} objName 
      * @param {String} objDesc 
      * @param {Number} startPrice 
      */
-    constructor(user, startDate, objName, objDesc, startPrice) {
+    constructor(username, startDate, objName, objDesc, startPrice) {
         /** @type {String} */
-        this.user = user;
+        this.username = username;
         /** @type {Date} */
         this.startDate = startDate;
         /** @type {String} */
@@ -72,13 +72,13 @@ export class AuctionCloseData {
 export class BidCreateData {
     /**
      * 
-     * @param {String} user 
+     * @param {String} username 
      * @param {Number} auctionId 
      * @param {Number} value 
     */
-   constructor(user, auctionId, value) {
+   constructor(username, auctionId, value) {
        /** @type {String} */
-       this.user = user;
+       this.username = username;
        /** @type {Number} */
        this.auctionId = auctionId;
        /** @type {Number} */

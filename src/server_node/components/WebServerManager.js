@@ -2,6 +2,7 @@ import { CommandType } from "../enums/CommandType.js";
 import { RaftNode } from "./RaftNode.js";
 import { Server } from "socket.io";
 import { State } from "../enums/State.js";
+import { UserCreateData, AuctionCreateData, BidCreateData, AuctionCloseData } from "./Log.js";
 
 /**
  * Manages the web server for handling client requests.

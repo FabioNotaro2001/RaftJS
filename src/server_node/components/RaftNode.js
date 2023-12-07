@@ -282,6 +282,7 @@ export class RaftNode {
         let logEntry = this.log.at(index);
 
         if (logEntry) {
+            /** @type {Promise} */
             let res = null;
             switch (logEntry.commandType) {
                 case CommandType.NEW_USER: {

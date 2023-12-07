@@ -3,6 +3,9 @@ import path from 'path';
 import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser';
 import { Socket as SocketCl, io } from "socket.io-client"
+import { CommandType } from '../server_node/enums/CommandType';
+import { NewAuctionRequest, NewUserRequest } from '../server_node/components/ClientRequestTypes';
+import { GetAllOpenAuctionsResponse } from '../server_node/components/ServerResponseTypes';
 
 const app = express();
 const port = 5000;
@@ -41,7 +44,7 @@ async function connectToRaftCluster() {
                 sock.close();
                 promiseResolve();
             }, 5000);
-            
+
             sock.emit("isLeader", (response) => {
                 clearTimeout(timeout);
 
@@ -84,19 +87,55 @@ app.use("/css/", express.static(path.join(__dirname, "css")));
 app.use("/js/", express.static(path.join(__dirname, "js")));
 app.use("/res/", express.static(path.join(__dirname, "res")));
 
-app.post("/createuser", (req, res) => {
-    // TODO Aggiunta dell'utente al DB se ha successo restituisci 200 se no l'errore.
-    
+app.post("/createuser", async (req, res) => {
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    /** @type {Number} */
+    let ret = null;
+
+    sock.emit(CommandType.NEW_USER, new NewUserRequest(req.body.username, req.body.password), async (/** @type {Promise<?Number>} */ response) => {
+        ret = await response;
+        resolvePromise();
+    });
+
     console.log(req);
-    res.sendStatus(201);
+
+    await promise;
+    if (ret) {
+        res.sendStatus(201);
+    } else {
+        res.sendStatus(409);
+    }
 });
 
-app.post("/loginuser", (req, res) => {
-    // TODO Verifica i dati inseriti dall'utente nel database e restituire la risposta settando in tal caso il cookie.
-    // Sets the cookie with the expiration timestamp.
-    const expireTime = new Date().getTime() + 86400000; // 1 giorno
-    res.cookie("user", expireTime, { maxAge: 86400000 });
-    res.sendStatus(201);
+app.post("/loginuser", async (req, res) => {
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    /** @type {Boolean} */
+    let ret = null;
+
+    sock.emit(CommandType.NEW_USER, new NewUserRequest(req.body.username, req.body.password), async (/** @type {Promise<boolean>} */ response) => {
+        ret = await response;
+        resolvePromise();
+    });
+
+    console.log(req);
+
+    await promise;
+    if (ret) {
+        // Sets the cookie with the expiration timestamp.
+        const expireTime = new Date().getTime() + 86400000; // 1 day.
+        res.cookie("user", expireTime, { maxAge: 86400000 });
+        res.sendStatus(200);
+    } else {
+        res.sendStatus(401);
+    }
 });
 
 app.post("/logoutuser", (req, res) => {
@@ -110,14 +149,58 @@ app.post("/logoutuser", (req, res) => {
     }
 });
 
-app.post("/addAuction", (req, res) => {
+app.post("/addAuction", async (req, res) => {
     // TODO Fare l'aggiunta della nuova asta.
-    res.sendStatus(201);
+
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    /** @type {Number} */
+    let ret = null;
+
+    sock.emit(CommandType.NEW_AUCTION, new NewAuctionRequest(req.body.username, req.body.startDate, req.body.objName, req.body.objDesc, req.body.startPrice),
+        async (/** @type {Promise<?Number>} */ response) => {
+            ret = await response;
+            resolvePromise();
+        });
+
+    console.log(req);
+
+    await promise;
+    if (ret) {
+        res.sendStatus(201);
+    } else {
+        res.sendStatus(500);
+    }
 });
 
-app.post("/getAllAuctions", (req, res) => {
+app.post("/getAllAuctions", async (req, res) => {
     // TODO Prendere tutte le aste dal database.
-    res.sendStatus(201);
+
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    /** @type {GetAllOpenAuctionsResponse[]} */
+    let ret = null;
+
+    sock.emit(CommandType.GET_ALL_OPEN_AUCTIONS, async (/** @type {Promise<?GetAllOpenAuctionsResponse[]>} */ response) => {
+        ret = await response;
+        resolvePromise();
+    });
+
+    console.log(req);
+
+    await promise;
+    if (ret) {
+        res.send(ret);
+        res.sendStatus(200);
+    } else {
+        res.sendStatus(500);
+    }
 });
 
 app.post("/addOffer", (req, res) => {

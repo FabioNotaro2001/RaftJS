@@ -35,25 +35,71 @@ export class GetAllOpenAuctionsResponse {
 }
 
 export class GetNewBidsResponse {
-    constructor() {    // TODO: complete from fields in queryGetNewerBids return value
-
+    /**
+     * 
+     * @param {Number} bidId 
+     * @param {String} user 
+     * @param {Number} value 
+     * @param {String} time 
+     */
+    constructor(bidId, user, value, time) {
+        this.bidId = bidId;
+        this.user = user;
+        this.value = value;
+        this.time = new Date(time);
     }
 }
 
-export class GetUserAuctionsResponse {   // TODO: complete from fields in corresponding method's return value
-    constructor() {
-
+export class GetUserAuctionsResponse {
+    /**
+     * 
+     * @param {Number} auctionId 
+     * @param {String} objectName 
+     * @param {String} objectDescription 
+     * @param {String} openingDate 
+     * @param {String} closingDate 
+     * @param {Number} startingPrice 
+     */
+    constructor(auctionId, objectName, objectDescription, openingDate, closingDate, startingPrice) {
+        this.auctionId = auctionId;
+        this.objectName = objectName;
+        this.objectDescription = objectDescription;
+        this.openingDate = new Date(openingDate);
+        this.closingDate = new Date(closingDate);
+        this.startingPrice = startingPrice;
     }
 }
 
-export class GetUserParticipationsResponse { // TODO: complete from fields in corresponding method's return value
-    constructor() {
-
+export class GetUserParticipationsResponse { 
+    /**
+     * 
+     * @param {Number} auctionId 
+     * @param {String} objectName 
+     * @param {String} objectDescription 
+     * @param {String} openingDate 
+     * @param {Number} startingPrice 
+     */
+    constructor(auctionId, objectName, objectDescription, openingDate, startingPrice) {
+        this.auctionId = auctionId;
+        this.objectName = objectName;
+        this.objectDescription = objectDescription;
+        this.openingDate = new Date(openingDate);
+        this.startingPrice = startingPrice;
     }
 }
 
 export class GetLastBidsResponse {   // TODO: complete from fields in corresponding method's return value
-    constructor() {
-
+    /**
+     * 
+     * @param {Number} bidId 
+     * @param {String} userMaker 
+     * @param {Number} value 
+     * @param {String} time 
+     */
+    constructor(bidId, userMaker, value, time) {
+        this.bidId = bidId;
+        this.userMaker = userMaker;
+        this.value = value;
+        this.time = new Date(time);
     }
 }

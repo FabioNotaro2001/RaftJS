@@ -226,7 +226,7 @@ export class DBManager {
 
     async queryViewAllOpenAuctions() {
         try {
-            const [rows, _] = await this.connection.execute(   // TODO: verify StartingPrice column name
+            const [rows, _] = await this.connection.execute(
                 'SELECT Id AS id, ObjectName AS objName, ObjectDescription AS objDesc, OpeningDate AS date, StartingPrice AS sp FROM Auctions WHERE ClosingDate IS NULL',
             );
 
@@ -247,11 +247,6 @@ export class DBManager {
      * 
      * @param {Number} auctionId 
      * @param {Number} lastBidId 
-     * @returns {Promise<{
-    * bidId : Number, 
-    * val : Number,
-    * time : String
-    * }[] | null>}
      */
     async queryGetNewerBids(auctionId, lastBidId) {
         try {
@@ -266,7 +261,7 @@ export class DBManager {
             let results = [];
 
             rows.forEach(row => {
-                results.push(new GetNewBidsResponse()); // TODO: see fields in description. Afterwards, remove @returns.
+                results.push(new GetNewBidsResponse(row.bidId, row.user, row.val, row.time));
             });
 
             return results;
@@ -276,19 +271,13 @@ export class DBManager {
     }
 
     /**
-     * @returns {Promise<{
-    * id : Number, 
-    * objname : String,
-    * objdesc : String,
-    * opdate : String,
-    * cldate : String,
-    * sp : Number
-    * }[] | null>}
-    */
+     * 
+     * @param {Number} userId 
+     */
     async queryViewAllAuctionsOfAUser(userId) {
         try {
             const [rows, fields] = await this.connection.execute(
-                'SELECT Id AS id, ObjectName AS objname, ObjectDescription AS objdesc, OpeningDate AS opdate, ClosingDate AS cldate, StartingPrice AS sp FROM Auctions WHERE UserMaker = ?',
+                'SELECT Id AS id, ObjectName AS objName, ObjectDescription AS objDesc, OpeningDate AS opDate, ClosingDate AS clDate, StartingPrice AS sp FROM Auctions WHERE UserMaker = ?',
                 [userId]
             );
 
@@ -296,7 +285,7 @@ export class DBManager {
             let results = [];
 
             rows.forEach(row => {
-                results.push(new GetUserAuctionsResponse()); // TODO: see fields in description. Afterwards, remove @returns.
+                results.push(new GetUserAuctionsResponse(row.id, row.objName, row.objDesc, row.opDate, row.clDate, row.sp));
             });
 
             return results;
@@ -306,18 +295,13 @@ export class DBManager {
     }
 
     /**
-      * @returns {Promise<{
-    * id : Number, 
-    * objname : String,
-    * objdesc : String,
-    * date : String,
-    * sp : Number
-    * }[] | null>}
-    */
+     * 
+     * @param {Number} userId 
+     */
     async queryViewAllAuctionsParticipatedByUser(userId) {
         try {
             const [rows, fields] = await this.connection.execute(
-                `SELECT a.Id AS id, a.ObjectName AS objname, a.ObjectDescription AS objdesc, a.OpeningDate AS date, a.StartingPrice as sp
+                `SELECT a.Id AS id, a.ObjectName AS objName, a.ObjectDescription AS objDesc, a.OpeningDate AS date, a.StartingPrice as sp
                 FROM Auctions AS a INNER JOIN Bids AS b
                     ON b.AuctionId = a.Id AND b.UserMaker = ?
                 GROUP BY a.Id`,
@@ -328,7 +312,7 @@ export class DBManager {
             let results = [];
 
             rows.forEach(row => {
-                results.push(new GetUserParticipationsResponse()); // TODO: see fields in description. Afterwards, remove @returns.
+                results.push(new GetUserParticipationsResponse(row.id, row.objName, row.objDesc, row.date, row.sp)); 
             });
 
             return results;

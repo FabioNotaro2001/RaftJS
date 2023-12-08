@@ -1,5 +1,3 @@
-// TODO: all types for fields (and comments for constructor arguments)
-
 export class GetAuctionInfoResponse {
     /**
      * 
@@ -24,22 +22,25 @@ export class GetAllOpenAuctionsResponse {
     /**
      * 
      * @param {Number} auctionId 
-     * @param {String} objDescription 
+     * @param {String} objName 
      * @param {?String} objDescription 
      * @param {String} openingDate 
      * @param {Number} startingPrice 
+     * @param {?Number} highestBidValue
      */
-    constructor(auctionId, objDescription, objDescription, openingDate, startingPrice) {
+    constructor(auctionId, objName, objDescription, openingDate, startingPrice, highestBidValue) {
         /** @type {Number} */
         this.auctionId = auctionId;
         /** @type {String} */
-        this.objectName = objDescription;
+        this.objName = objName;
         /** @type {?String} */
         this.objDescription = objDescription;
         /** @type {Date} */
         this.openingDate = new Date(openingDate);
         /** @type {Number} */
         this.startingPrice = startingPrice;
+        /** @type {?Number}*/
+        this.highestBidValue = highestBidValue;
     }
 }
 

@@ -54,7 +54,10 @@ export class WebServerManager {
     propagateNewLogEntry(prevLogIndex, prevLogTerm) {
         this.raftNode.matchIndex.forEach((i, nodeId) => {
             if (i == this.raftNode.commitIndex) {
-                this.raftNode.rpcManager.sendReplicationTo(node.sockets.get(nodeId), this.raftNode.currentTerm, prevLogIndex, prevLogTerm, [this.raftNode.log.at(-1)], this.raftNode.commitIndex);
+                let temp = this.raftNode.log.at(-1);
+                let record = new LogRecord(temp.term, temp.commandType, temp.logData, null);
+                record.callback = null;
+                this.raftNode.rpcManager.sendReplicationTo(this.raftNode.sockets.get(nodeId), this.raftNode.currentTerm, prevLogIndex, prevLogTerm, [record], this.raftNode.commitIndex);
                 this.raftNode.resetHeartbeatTimeout(nodeId);
             }
         });

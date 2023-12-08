@@ -278,7 +278,7 @@ export class RaftNode {
         this.debugLog("Node stopped");
     }
 
-    applyLogEntry(index) {
+    async applyLogEntry(index) {
         let logEntry = this.log.at(index);
 
         if (logEntry) {
@@ -290,7 +290,7 @@ export class RaftNode {
                     let data = logEntry.logData;
 
                     if (!this.disabledDB) {
-                        res = this.dbManager.queryAddNewUser(data.username, data.password);
+                        res = await this.dbManager.queryAddNewUser(data.username, data.password);
                     }
                     this.debugLog("Added new user to database.");
                     break;
@@ -300,7 +300,7 @@ export class RaftNode {
                     let data = logEntry.logData;
 
                     if (!this.disabledDB) {
-                        res = this.dbManager.queryAddNewAuction(data.username, data.startDate, data.objName, data.objDesc, data.startPrice);
+                        res = await this.dbManager.queryAddNewAuction(data.username, data.startDate, data.objName, data.objDesc, data.startPrice);
                     }
                     this.debugLog("Added new auction to database.");
                     break;
@@ -310,7 +310,7 @@ export class RaftNode {
                     let data = logEntry.logData;
 
                     if (!this.disabledDB) {
-                        res = this.dbManager.queryCloseAuction(data.auctionId, data.closingDate);
+                        res = await this.dbManager.queryCloseAuction(data.auctionId, data.closingDate);
                     }
                     this.debugLog("Closed auction in database.");
                     break;
@@ -320,7 +320,7 @@ export class RaftNode {
                     let data = logEntry.logData;
 
                     if (!this.dbManager) {
-                        res = this.dbManager.queryAddNewBid(data.username, data.auctionId, data.value);
+                        res = await this.dbManager.queryAddNewBid(data.username, data.auctionId, data.value);
                     }
                     this.debugLog("Added new bid to database.");
                     break;

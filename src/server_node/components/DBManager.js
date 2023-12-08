@@ -1,5 +1,5 @@
 import * as mysql from "mysql2/promise";
-import { GetAllOpenAuctionsResponse, GetAuctionInfoResponse, GetLastBidsResponse, GetNewBidsResponse, GetUserAuctionsResponse, GetUserParticipationsResponse } from "./ServerResponseTypes";
+import { GetAllOpenAuctionsResponse, GetAuctionInfoResponse, GetLastBidsResponse, GetNewBidsResponse, GetUserAuctionsResponse, GetUserParticipationsResponse } from "./ServerResponseTypes.js";
 
 export class StatusResults {
     /**
@@ -104,7 +104,7 @@ export class DBManager {
     async queryAddNewUser(username, password) {
         try {
             /** @type {mysql.ResultSetHeader} */
-            const results = this.connection.execute(
+            const results = await this.connection.execute(
                 'INSERT INTO Users (Username, Password) VALUES (?, ?)',
                 [username, password]
             );
@@ -135,11 +135,17 @@ export class DBManager {
                     return StatusResults.failure('Insufficient bid price.');
                 }
 
-                this.connection.execute(
+                const result = await this.connection.execute(
                     'INSERT INTO Bids (UserMaker, AuctionId, Value, Time) VALUES (?, ?, ?, ?)',
                     [userMaker, auctionId, value, new Date().toISOString()]
                 );
-                StatusResults.success('Bid added.');
+                if(result.insertId){
+                    await this.connection.execute(
+                        'UPDATE Auctions SET WinnerBid = ? WHERE Id = ?',
+                        [result.insertId, auctionId]
+                    );
+                    StatusResults.success('Bid added.');
+                }
             }
             return StatusResults.failure('Auction closed.');
         } catch (err) {
@@ -155,11 +161,9 @@ export class DBManager {
     async queryGetAuctionInfo(auctionId) {
         let [rows, _] = await this.connection.execute(
             `SELECT a.UserMaker AS um, a.StartingPrice AS sp, a.ClosingDate AS cd, b.Value AS hv 
-            FROM Auctions AS a INNER JOIN Bids AS b
-                ON b.AuctionId = a.Id
-            WHERE a.Id = ?
-            ORDER BY b.Value DESC
-            LIMIT 1`,
+            FROM Auctions AS a LEFT JOIN Bids AS b
+                ON a.WinnerBid = b.Id
+            WHERE a.Id = ?`,
             [auctionId]
         );
 
@@ -235,14 +239,17 @@ export class DBManager {
     async queryViewAllOpenAuctions() {
         try {
             const [rows, _] = await this.connection.execute(
-                'SELECT Id AS id, ObjectName AS objName, ObjectDescription AS objDesc, OpeningDate AS date, StartingPrice AS sp FROM Auctions WHERE ClosingDate IS NULL',
+                `SELECT a.Id AS id, a.ObjectName AS objName, a.ObjectDescription AS objDesc, a.OpeningDate AS date, a.StartingPrice AS sp, b.Value AS hv 
+                FROM Auctions AS a LEFT JOIN Bids AS b
+                ON a.WinnerBid = b.Id
+                WHERE ClosingDate IS NULL`
             );
 
             /** @type {GetAllOpenAuctionsResponse[]} */
             let results = [];
 
             rows.forEach(row => {
-                results.push(new GetAllOpenAuctionsResponse(row.id, row.objName, row.objDesc, row.date, row.sp));
+                results.push(new GetAllOpenAuctionsResponse(row.id, row.objName, row.objDesc, row.date, row.sp, row.hv));
             });
 
             return results;

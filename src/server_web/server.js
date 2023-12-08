@@ -3,9 +3,10 @@ import path from 'path';
 import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser';
 import { Socket as SocketCl, io } from "socket.io-client"
-import { CommandType } from '../server_node/enums/CommandType';
-import { NewAuctionRequest, NewUserRequest } from '../server_node/components/ClientRequestTypes';
-import { GetAllOpenAuctionsResponse } from '../server_node/components/ServerResponseTypes';
+import { CommandType } from '../server_node/enums/CommandType.js';
+import { NewAuctionRequest, NewUserRequest, NewBidRequest } from '../server_node/components/ClientRequestTypes.js';
+import { GetAllOpenAuctionsResponse } from '../server_node/components/ServerResponseTypes.js';
+import { StatusResults } from '../server_node/components/DBManager.js';
 
 const app = express();
 const port = 5000;
@@ -21,7 +22,6 @@ let nodeIds = [...ports.keys()];
 /** @type {SocketCl} */
 let sock = null;
 
-//TODO Gestire disconnessioni e connessioni a nuovo leader.
 async function connectToRaftCluster() {
     let randomNodeId = nodeIds[Math.round(Math.random() * nodeIds.length)];
     let host = "127.0.0.1:" + ports.get(randomNodeId);      // Picks a random node to connect to.
@@ -66,7 +66,8 @@ async function connectToRaftCluster() {
 
         });
 
-        sock.on("disconnect", () => {
+        sock.on("disconnect", (err) => {
+            console.log(err.message);
             sock.close();
             connectToRaftCluster();
         });
@@ -76,13 +77,13 @@ async function connectToRaftCluster() {
     console.log("Connected!");
 }
 
-// connectToRaftCluster();
+connectToRaftCluster();
 
 app.use(cookieParser());
 app.use(bodyParser.json());
 
 
-const __dirname = path.resolve(path.normalize("../client_web"));
+const __dirname = path.resolve(path.normalize("./src/client_web"));
 app.use("/css/", express.static(path.join(__dirname, "css")));
 app.use("/js/", express.static(path.join(__dirname, "js")));
 app.use("/res/", express.static(path.join(__dirname, "res")));
@@ -96,7 +97,7 @@ app.post("/createuser", async (req, res) => {
     /** @type {Number} */
     let ret = null;
 
-    sock.emit(CommandType.NEW_USER, new NewUserRequest(req.body.username, req.body.password), async (/** @type {Promise<?Number>} */ response) => {
+    sock.emit(CommandType.NEW_USER, new NewUserRequest(req.body.username, req.body.pwd), async (/** @type {Promise<?Number>} */ response) => {
         ret = await response;
         resolvePromise();
     });
@@ -150,8 +151,6 @@ app.post("/logoutuser", (req, res) => {
 });
 
 app.post("/addAuction", async (req, res) => {
-    // TODO Fare l'aggiunta della nuova asta.
-
     let resolvePromise;
     let promise = new Promise((resolve) => {
         resolvePromise = resolve;
@@ -177,8 +176,6 @@ app.post("/addAuction", async (req, res) => {
 });
 
 app.post("/getAllAuctions", async (req, res) => {
-    // TODO Prendere tutte le aste dal database.
-
     let resolvePromise;
     let promise = new Promise((resolve) => {
         resolvePromise = resolve;
@@ -203,14 +200,34 @@ app.post("/getAllAuctions", async (req, res) => {
     }
 });
 
-app.post("/addOffer", (req, res) => {
-    // TODO Aggiungere offerta al DB.
-    res.sendStatus(201);
-});
+app.post("/addOffer", async (req, res) => {
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
 
-app.post("/checkOffer", (req, res) => {
-    // TODO Prendere l'ultimo prezzo di una determinata asta..
-    res.sendStatus(201);
+    /** @type {StatusResults} */
+    let ret = null;
+
+    sock.emit(CommandType.NEW_BID, new NewBidRequest(req.body.username, req.body.auctionId, req.body.bidValue),
+        async (/** @type {Promise<StatusResults>} */ response) => {
+            ret = await response;
+            resolvePromise();
+        });
+
+    console.log(req);
+
+    await promise;
+    if (ret) {
+        if(ret.success){
+            res.sendStatus(201);
+        } else {
+            res.sendStatus(400);
+        }
+        res.send(ret.info);
+    } else {
+        res.sendStatus(500);
+    }
 });
 
 app.get('/', (req, res) => {

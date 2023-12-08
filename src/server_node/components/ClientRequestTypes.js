@@ -46,7 +46,7 @@ export class NewAuctionRequest {
      * @param {String} username The name of the user creating the auction.
      * @param {Date} startDate The date of the start of the auction.
      * @param {String} objName The name of the object up for auction.
-     * @param {String} objDesc A description of the object being auctioned.
+     * @param {?String} objDesc A description of the object being auctioned.
      * @param {Number} startPrice The starting price of the auction.
      */
     constructor(username, startDate, objName, objDesc, startPrice) {
@@ -56,7 +56,7 @@ export class NewAuctionRequest {
         this.startDate = startDate.toISOString();
         /** @type {String} */
         this.objName = objName;
-        /** @type {String} */
+        /** @type {?String} */
         this.objDesc = objDesc;
         /** @type {Number} */
         this.startPrice = startPrice;

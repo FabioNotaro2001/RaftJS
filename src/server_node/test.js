@@ -17,8 +17,8 @@ for(let i = 0; i < nNodes; i++){
         let id = otherIDs[i];
         tempMap.set("127.0.0." + (i + 1) + ":" + ports.get(id).port1, id);
     }
-    nodes.push(new RaftNode(ids[i], ports.get(ids[i]).port1, ports.get(ids[i]).port2, 5000, 10000, 5000, 10000, 3000, 3000, "", "", "", "",
-                tempMap, true, true));
+    nodes.push(new RaftNode(ids[i], ports.get(ids[i]).port1, ports.get(ids[i]).port2, 5000, 10000, 5000, 10000, 3000, 3000, "192.168.1.127", "root", "", "portale",
+                tempMap, true, false));
 }
 
 nodes.forEach((e) => e.start());

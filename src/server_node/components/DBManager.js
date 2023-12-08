@@ -207,6 +207,11 @@ export class DBManager {
         return rows.length > 0;
     }
 
+    /**
+     * Query that mark a given auction as closed.
+     * @param {Number} auctionId The id of the auction to be closed.
+     * @param {String} closingDate The exact time when the auction is cloed.
+     */
     async queryCloseAuction(auctionId, closingDate) {
         try {
             /** @type {mysql.ResultSetHeader} */
@@ -224,6 +229,9 @@ export class DBManager {
         }
     }
 
+    /**
+     * Query that returns all the open auctions.
+     */
     async queryViewAllOpenAuctions() {
         try {
             const [rows, _] = await this.connection.execute(
@@ -244,9 +252,9 @@ export class DBManager {
     }
 
     /**
-     * 
-     * @param {Number} auctionId 
-     * @param {Number} lastBidId 
+     * Query that returns all the bids of a given auction following a specified one.
+     * @param {Number} auctionId The id of the auction to check.
+     * @param {Number} lastBidId The id of the starting bid to return.
      */
     async queryGetNewerBids(auctionId, lastBidId) {
         try {
@@ -271,8 +279,8 @@ export class DBManager {
     }
 
     /**
-     * 
-     * @param {Number} userId 
+     * Query that returns all the auction created by a given user.
+     * @param {Number} userId The id of the user whose auction must be showed.
      */
     async queryViewAllAuctionsOfAUser(userId) {
         try {
@@ -295,8 +303,8 @@ export class DBManager {
     }
 
     /**
-     * 
-     * @param {Number} userId 
+     * Query that returns all the auction in which a given user has partecipated.
+     * @param {Number} userId The id of the user we want to check which auctions have been participated by him.
      */
     async queryViewAllAuctionsParticipatedByUser(userId) {
         try {
@@ -322,14 +330,9 @@ export class DBManager {
     }
 
     /**
-     * 
-     * @param {Number} auctionId 
-     * @param {Number} n 
-     * @returns {Promise<{
-    * bidId : Number, 
-    * val : Number,
-    * time : String
-    * }[] | null>}
+     * Query that returns the last n bids of a given auction.
+     * @param {Number} auctionId Id of the auction we want to get the lates n bids.
+     * @param {Number} n Number of bids that must be returned.
      */
     async queryViewNLatestBidsInAuction(auctionId, n) {
         try {
@@ -345,7 +348,7 @@ export class DBManager {
             let results = [];
 
             rows.forEach(row => {
-                results.push(new GetLastBidsResponse()) // TODO: see fields in description. Afterwards, remove @returns.
+                results.push(new GetLastBidsResponse(row.bidId, row.user, row,val, row.time));
             });
 
             return results;

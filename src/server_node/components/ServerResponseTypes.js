@@ -88,7 +88,7 @@ export class GetUserParticipationsResponse {
     }
 }
 
-export class GetLastBidsResponse {   // TODO: complete from fields in corresponding method's return value
+export class GetLastBidsResponse { 
     /**
      * 
      * @param {Number} bidId 

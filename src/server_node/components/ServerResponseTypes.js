@@ -9,9 +9,13 @@ export class GetAuctionInfoResponse {
      * @param {?Number} highestBid 
      */
     constructor(creator, startingPrice, closed, highestBid) {
+        /** @type {String} */
         this.creator = creator;
+        /** @type {Number} */
         this.startingPrice = startingPrice;
+        /** @type {Boolean} */
         this.closed = closed;
+        /** @type {?Number} */
         this.highestBid = highestBid;
     }
 }
@@ -19,18 +23,23 @@ export class GetAuctionInfoResponse {
 export class GetAllOpenAuctionsResponse {
     /**
      * 
-     * @param {Number} id 
-     * @param {String} objName 
-     * @param {String} objdesc 
-     * @param {String} date 
-     * @param {Number} sp 
+     * @param {Number} auctionId 
+     * @param {String} objDescription 
+     * @param {?String} objDescription 
+     * @param {String} openingDate 
+     * @param {Number} startingPrice 
      */
-    constructor(id, objName, objDesc, date, sp) {
-        this.id = id;
-        this.objName = objName;
-        this.objDesc = objDesc;
-        this.date = new Date(date);
-        this.sp = sp;
+    constructor(auctionId, objDescription, objDescription, openingDate, startingPrice) {
+        /** @type {Number} */
+        this.auctionId = auctionId;
+        /** @type {String} */
+        this.objectName = objDescription;
+        /** @type {?String} */
+        this.objDescription = objDescription;
+        /** @type {Date} */
+        this.openingDate = new Date(openingDate);
+        /** @type {Number} */
+        this.startingPrice = startingPrice;
     }
 }
 
@@ -38,15 +47,19 @@ export class GetNewBidsResponse {
     /**
      * 
      * @param {Number} bidId 
-     * @param {String} user 
-     * @param {Number} value 
-     * @param {String} time 
+     * @param {String} userMaker 
+     * @param {Number} bidValue 
+     * @param {String} bidDate 
      */
-    constructor(bidId, user, value, time) {
+    constructor(bidId, userMaker, bidValue, bidDate) {
+        /** @type {Number} */
         this.bidId = bidId;
-        this.user = user;
-        this.value = value;
-        this.time = new Date(time);
+        /** @type {String} */
+        this.userMaker = userMaker;
+        /** @type {Number} */
+        this.bidValue = bidValue;
+        /** @type {Date} */
+        this.bidDate = new Date(bidDate);
     }
 }
 
@@ -54,18 +67,24 @@ export class GetUserAuctionsResponse {
     /**
      * 
      * @param {Number} auctionId 
-     * @param {String} objectName 
-     * @param {String} objectDescription 
+     * @param {String} objName 
+     * @param {?String} objDescription 
      * @param {String} openingDate 
-     * @param {String} closingDate 
+     * @param {?String} closingDate 
      * @param {Number} startingPrice 
-     */
-    constructor(auctionId, objectName, objectDescription, openingDate, closingDate, startingPrice) {
+    */
+   constructor(auctionId, objName, objDescription, openingDate, closingDate, startingPrice) {
+        /** @type {Number} */
         this.auctionId = auctionId;
-        this.objectName = objectName;
-        this.objectDescription = objectDescription;
+        /** @type {String} */
+        this.objName = objName;
+        /** @type {?String} */
+        this.objDescription = objDescription;
+        /** @type {Date} */
         this.openingDate = new Date(openingDate);
-        this.closingDate = new Date(closingDate);
+        /** @type {?Date} */
+        this.closingDate = closingDate ? new Date(closingDate) : null;
+        /** @type {Number} */
         this.startingPrice = startingPrice;
     }
 }
@@ -74,17 +93,22 @@ export class GetUserParticipationsResponse {
     /**
      * 
      * @param {Number} auctionId 
-     * @param {String} objectName 
-     * @param {String} objectDescription 
+     * @param {String} objName 
+     * @param {?String} objDescription 
      * @param {String} openingDate 
      * @param {Number} startingPrice 
-     */
-    constructor(auctionId, objectName, objectDescription, openingDate, startingPrice) {
-        this.auctionId = auctionId;
-        this.objectName = objectName;
-        this.objectDescription = objectDescription;
-        this.openingDate = new Date(openingDate);
-        this.startingPrice = startingPrice;
+    */
+   constructor(auctionId, objName, objDescription, openingDate, startingPrice) {
+       /** @type {Number} */
+       this.auctionId = auctionId;
+       /** @type {?String} */
+       this.objName = objName;
+       /** @type {?String} */
+       this.objDescription = objDescription;
+       /** @type {Date} */
+       this.openingDate = new Date(openingDate);
+       /** @type {Number} */
+       this.startingPrice = startingPrice;
     }
 }
 
@@ -93,13 +117,17 @@ export class GetLastBidsResponse {   // TODO: complete from fields in correspond
      * 
      * @param {Number} bidId 
      * @param {String} userMaker 
-     * @param {Number} value 
-     * @param {String} time 
-     */
-    constructor(bidId, userMaker, value, time) {
+     * @param {Number} bidValue 
+     * @param {String} bidDate 
+    */
+   constructor(bidId, userMaker, bidValue, bidDate) {
+        /** @type {Number} */
         this.bidId = bidId;
+        /** @type {String} */
         this.userMaker = userMaker;
-        this.value = value;
-        this.time = new Date(time);
+        /** @type {Number} */
+        this.bidValue = bidValue;
+        /** @type {Date} */
+        this.bidDate = new Date(bidDate);
     }
 }

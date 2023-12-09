@@ -104,11 +104,12 @@ export class DBManager {
     async queryAddNewUser(username, password) {
         try {
             /** @type {mysql.ResultSetHeader} */
-            const results = await this.connection.execute(
+            const [results, _] = await this.connection.execute(
                 'INSERT INTO Users (Username, Password) VALUES (?, ?)',
                 [username, password]
             );
-
+            
+            console.table(results);
             return results.insertId;
         } catch (err) {
             return null;
@@ -135,7 +136,7 @@ export class DBManager {
                     return StatusResults.failure('Insufficient bid price.');
                 }
 
-                const result = await this.connection.execute(
+                const [results, _] = await this.connection.execute(
                     'INSERT INTO Bids (UserMaker, AuctionId, Value, Time) VALUES (?, ?, ?, ?)',
                     [userMaker, auctionId, value, new Date().toISOString()]
                 );
@@ -186,7 +187,7 @@ export class DBManager {
     async queryAddNewAuction(userMaker, openingDate, objectName, objectDescription, startingPrice) {
         try {
             /** @type {mysql.ResultSetHeader} */
-            const results = await this.connection.execute(
+            const [results, _] = await this.connection.execute(
                 'INSERT INTO Auctions (UserMaker, OpeningDate, ClosingDate, ObjectName, ObjectDescription, StartingPrice, WinnerBid) VALUES (?, ?, ?, ?, ?, ?, ?)',
                 [userMaker, openingDate.toISOString(), null, objectName, objectDescription, startingPrice, null]
             );

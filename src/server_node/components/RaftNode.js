@@ -329,13 +329,15 @@ export class RaftNode {
                     throw new Error("Unknown command type '" + logEntry.commandType + "'");
                 }
             }
-
+            if(this.state == State.LEADER){
+                this.debugLog("Leader COMMIT");
+            } else{
+                this.debugLog("Client COMMIT");
+            }
             if (logEntry.callback) {
                 logEntry.callback(res); // Fulfill promise to web server by sending another promise.
                 logEntry.callback = null; 
-            } else {
-                this.debugLog("Client COMMIT");
-            }
+            } 
         } else {
             throw new Error("Log entry at index " + index + "is undefined.");
         }

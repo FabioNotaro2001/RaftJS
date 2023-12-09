@@ -29,10 +29,9 @@ export class WebServerManager {
         this.webServerServer = new Server();
 
         this.webServerServer.on("connection", socket => {    // Handle connections to this node.
-            socket.on(CommandType.NEW_USER, (args, callback) => this.onRequest(CommandType.NEW_USER, args, callback));
-            socket.on(CommandType.NEW_AUCTION, (args, callback) => this.onRequest(CommandType.NEW_AUCTION, args, callback));
-            socket.on(CommandType.NEW_BID, (args, callback) => this.onRequest(CommandType.NEW_BID, args, callback));
-            socket.on(CommandType.CLOSE_AUCTION, (args, callback) => this.onRequest(CommandType.CLOSE_AUCTION, args, callback));
+            Object.values(CommandType).forEach((commandType) => {
+                socket.on(commandType, (args, callback) => this.onRequest(commandType, args, callback));
+            });
 
             socket.on("isLeader", (callback) => {
                 callback({

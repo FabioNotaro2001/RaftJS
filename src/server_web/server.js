@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser';
 import { Socket as SocketCl, io } from "socket.io-client"
 import { CommandType } from '../server_node/enums/CommandType.js';
-import { NewAuctionRequest, NewUserRequest, NewBidRequest } from '../server_node/components/ClientRequestTypes.js';
+import { NewAuctionRequest, NewUserRequest, NewBidRequest, LoginRequest } from '../server_node/components/ClientRequestTypes.js';
 import { GetAllOpenAuctionsResponse } from '../server_node/components/ServerResponseTypes.js';
 import { StatusResults } from '../server_node/components/DBManager.js';
 
@@ -14,6 +14,7 @@ const port = 5000;
 const ports = new Map();
 
 // FIXME: change to get info from configuration.
+// TODO: Add delay before reconnection.
 for (let i = 0; i < 5; i++) {
     ports.set("Node" + (i + 1), 15001 + (i * 2))
 }
@@ -35,7 +36,9 @@ async function connectToRaftCluster() {
 
         sock = io("ws://" + host, {
             autoConnect: false,
-            reconnection: false,
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
             timeout: 5000
         }).connect();
 
@@ -97,15 +100,15 @@ app.post("/createuser", async (req, res) => {
     /** @type {Number} */
     let ret = null;
 
-    sock.emit(CommandType.NEW_USER, new NewUserRequest(req.body.username, req.body.pwd), async (/** @type {Promise<?Number>} */ response) => {
-        ret = await response;
+    sock.emit(CommandType.NEW_USER, new NewUserRequest(req.body.username, req.body.pwd), async (/** @type {?Number} */ response) => {
+        ret = response;
         resolvePromise();
     });
 
     console.log(req);
 
     await promise;
-    if (ret) {
+    if (ret != null) {
         res.sendStatus(201);
     } else {
         res.sendStatus(409);
@@ -121,7 +124,7 @@ app.post("/loginuser", async (req, res) => {
     /** @type {Boolean} */
     let ret = null;
 
-    sock.emit(CommandType.NEW_USER, new NewUserRequest(req.body.username, req.body.password), async (/** @type {Promise<boolean>} */ response) => {
+    sock.emit(CommandType.LOGIN, new LoginRequest(req.body.name, req.body.pwd), async (/** @type {Promise<boolean>} */ response) => {
         ret = await response;
         resolvePromise();
     });
@@ -129,7 +132,7 @@ app.post("/loginuser", async (req, res) => {
     console.log(req);
 
     await promise;
-    if (ret) {
+    if (ret != null) {
         // Sets the cookie with the expiration timestamp.
         const expireTime = new Date().getTime() + 86400000; // 1 day.
         res.cookie("user", expireTime, { maxAge: 86400000 });
@@ -160,15 +163,15 @@ app.post("/addAuction", async (req, res) => {
     let ret = null;
 
     sock.emit(CommandType.NEW_AUCTION, new NewAuctionRequest(req.body.username, req.body.startDate, req.body.objName, req.body.objDesc, req.body.startPrice),
-        async (/** @type {Promise<?Number>} */ response) => {
-            ret = await response;
+        async (/** @type {?Number} */ response) => {
+            ret = response;
             resolvePromise();
         });
 
     console.log(req);
 
     await promise;
-    if (ret) {
+    if (ret != null) {
         res.sendStatus(201);
     } else {
         res.sendStatus(500);
@@ -184,7 +187,7 @@ app.post("/getAllAuctions", async (req, res) => {
     /** @type {GetAllOpenAuctionsResponse[]} */
     let ret = null;
 
-    sock.emit(CommandType.GET_ALL_OPEN_AUCTIONS, async (/** @type {Promise<?GetAllOpenAuctionsResponse[]>} */ response) => {
+    sock.emit(CommandType.GET_ALL_OPEN_AUCTIONS, null, async (/** @type {Promise<?GetAllOpenAuctionsResponse[]>} */ response) => {
         ret = await response;
         resolvePromise();
     });
@@ -192,9 +195,8 @@ app.post("/getAllAuctions", async (req, res) => {
     console.log(req);
 
     await promise;
-    if (ret) {
-        res.send(ret);
-        res.sendStatus(200);
+    if (ret != null) {
+        res.status(200).send(ret);
     } else {
         res.sendStatus(500);
     }
@@ -210,19 +212,19 @@ app.post("/addOffer", async (req, res) => {
     let ret = null;
 
     sock.emit(CommandType.NEW_BID, new NewBidRequest(req.body.username, req.body.auctionId, req.body.bidValue),
-        async (/** @type {Promise<StatusResults>} */ response) => {
-            ret = await response;
+        async (/** @type {StatusResults} */ response) => {
+            ret = response;
             resolvePromise();
         });
 
     console.log(req);
 
     await promise;
-    if (ret) {
+    if (ret != null) {
         if(ret.success){
-            res.sendStatus(201);
+            res.status(201);
         } else {
-            res.sendStatus(400);
+            res.status(400);
         }
         res.send(ret.info);
     } else {

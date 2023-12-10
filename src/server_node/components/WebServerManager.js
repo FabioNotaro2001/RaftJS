@@ -68,13 +68,12 @@ export class WebServerManager {
      * @param {ClientRequest} args The arguments of the command.
      * @param {(response: Promise) => {}} callback 
      */
-    onRequest(commandType, args, callback) {
+    async onRequest(commandType, args, callback) {
         let prevLogIndex = this.raftNode.log.length - 1;
         let prevLogTerm = this.raftNode.log.at(-1);
 
         switch (commandType) {
             case CommandType.NEW_USER: {
-
                 this.raftNode.log.push(new LogRecord(this.raftNode.currentTerm, commandType, new UserCreateData(args.username, args.password), callback));
                 this.propagateNewLogEntry(prevLogIndex, prevLogTerm);
                 break;
@@ -85,16 +84,16 @@ export class WebServerManager {
                 break;
             }
             case CommandType.GET_AUCTION_INFO: {
-                callback(this.raftNode.dbManager.queryGetAuctionInfo(args.auctionId));
+                callback(await this.raftNode.dbManager.queryGetAuctionInfo(args.auctionId));
                 break;
             }
             case CommandType.NEW_AUCTION: {
-                this.raftNode.log.push(new LogRecord(this.raftNode.currentTerm, commandType, new AuctionCreateData(args.user, args.startDate, args.objName, args.objDesc, args.startPrice), callback));
+                this.raftNode.log.push(new LogRecord(this.raftNode.currentTerm, commandType, new AuctionCreateData(args.username, args.startDate, args.objName, args.objDesc, args.startPrice), callback));
                 this.propagateNewLogEntry(prevLogIndex, prevLogTerm);
                 break;
             }
             case CommandType.LOGIN: {
-                callback(this.raftNode.dbManager.queryForLogin(args.username, args.password));
+                callback(await this.raftNode.dbManager.queryForLogin(args.username, args.password));
                 break;
             }
             case CommandType.CLOSE_AUCTION: {
@@ -103,23 +102,23 @@ export class WebServerManager {
                 break;
             }
             case CommandType.GET_ALL_OPEN_AUCTIONS: {
-                callback(this.raftNode.dbManager.queryViewAllOpenAuctions());
+                callback(await this.raftNode.dbManager.queryViewAllOpenAuctions());
                 break;
             }
             case CommandType.GET_NEW_BIDS: {
-                callback(this.raftNode.dbManager.queryGetNewerBids(args.auctionId, args.lastBidId));
+                callback(await this.raftNode.dbManager.queryGetNewerBids(args.auctionId, args.lastBidId));
                 break;
             }
             case CommandType.GET_USER_AUCTIONS: {
-                callback(this.raftNode.dbManager.queryViewAllAuctionsOfAUser(args.username));
+                callback(await this.raftNode.dbManager.queryViewAllAuctionsOfAUser(args.username));
                 break;
             }
             case CommandType.GET_USER_PARTICIPATIONS: {
-                callback(this.raftNode.dbManager.queryViewAllAuctionsParticipatedByUser(args.username));
+                callback(await this.raftNode.dbManager.queryViewAllAuctionsParticipatedByUser(args.username));
                 break;
             }
             case CommandType.GET_LAST_N_BIDS: {
-                callback(this.raftNode.dbManager.queryViewNLatestBidsInAuction(args.auctionId, args.numOfBids));
+                callback(await this.raftNode.dbManager.queryViewNLatestBidsInAuction(args.auctionId, args.numOfBids));
                 break;
             }
         }

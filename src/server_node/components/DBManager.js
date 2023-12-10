@@ -103,14 +103,13 @@ export class DBManager {
      */
     async queryAddNewUser(username, password) {
         try {
-            /** @type {mysql.ResultSetHeader} */
+            /** @type {[mysql.ResultSetHeader, any]} */
             const [results, _] = await this.connection.execute(
                 'INSERT INTO Users (Username, Password) VALUES (?, ?)',
                 [username, password]
             );
             
-            console.table(results);
-            return results.insertId;
+            return results.affectedRows;
         } catch (err) {
             return null;
         }
@@ -178,7 +177,7 @@ export class DBManager {
     /**
      * Adds a new auction to the database.
      * @param {String} userMaker The user creating the auction.
-     * @param {Date} openingDate Date of the start of the auction.
+     * @param {String} openingDate Date of the start of the auction.
      * @param {String} objectName The name of the auctioned object.
      * @param {String} objectDescription The description of the auctioned object.
      * @param {Number} startingPrice The starting price of the auction.
@@ -189,7 +188,7 @@ export class DBManager {
             /** @type {mysql.ResultSetHeader} */
             const [results, _] = await this.connection.execute(
                 'INSERT INTO Auctions (UserMaker, OpeningDate, ClosingDate, ObjectName, ObjectDescription, StartingPrice, WinnerBid) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [userMaker, openingDate.toISOString(), null, objectName, objectDescription, startingPrice, null]
+                [userMaker, openingDate, null, objectName, objectDescription, startingPrice, null]
             );
 
             return results.insertId;

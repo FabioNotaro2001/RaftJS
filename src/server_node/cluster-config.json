@@ -1,23 +1,39 @@
 {
-    "clusterSize": 5,
-    "port": 11111,
+    "port1": 15000,
+    "port2": 15001,
+    "protocolConfig": {
+        "minLeaderTimeout": 2000,
+        "maxLeaderTimeout": 3000,
+        "minElectionTimeout": 3000,
+        "maxElectionTimeout": 5000,
+        "minElectionDelay": 1000,
+        "heartbeatTimeout": 1000
+    },
     "ownId": "node1",
+    "dbHost": "localhost",
+    "dbUser": "root",
+    "dbPassword": "password",
+    "dbDatabase": "portale",
     "otherNodes": [
         {
-            "host": "",
-            "id": "node2"
+            "host": "localhost",
+            "id": "node2",
+            "port": 15002
         },
         {
-            "host": "",
-            "id": "node3"
+            "host": "localhost",
+            "id": "node3",
+            "port": 15004
         },
         {
-            "host": "",
-            "id": "node4"
+            "host": "localhost",
+            "id": "node4",
+            "port": 15006
         },
         {
-            "host": "",
-            "id": "node5"
+            "host": "localhost",
+            "id": "node5",
+            "port": 15008
         }
     ]
 }

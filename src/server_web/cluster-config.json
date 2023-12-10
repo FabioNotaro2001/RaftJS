@@ -1,23 +1,30 @@
 {
-    "clusterSize": 5,
-    "port": 11111,
-    "ownId": "node1",
-    "otherNodes": [
+    "serverPort": "5000",
+    "nodes": [
         {
-            "host": "",
-            "id": "node2"
+            "host": "127.0.0.1",
+            "id": "Node1",
+            "port": 15001
         },
         {
-            "host": "",
-            "id": "node3"
+            "host": "127.0.0.1",
+            "id": "Node2",
+            "port": 15003
         },
         {
-            "host": "",
-            "id": "node4"
+            "host": "127.0.0.1",
+            "id": "Node3",
+            "port": 15005
         },
         {
-            "host": "",
-            "id": "node5"
+            "host": "127.0.0.1",
+            "id": "Node4",
+            "port": 15007
+        },
+        {
+            "host": "127.0.0.1",
+            "id": "Node5",
+            "port": 15009
         }
     ]
 }

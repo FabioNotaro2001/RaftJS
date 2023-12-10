@@ -5,27 +5,52 @@ import bodyParser from 'body-parser';
 import { Socket as SocketCl, io } from "socket.io-client"
 import { CommandType } from '../server_node/enums/CommandType.js';
 import { NewAuctionRequest, NewUserRequest, NewBidRequest, LoginRequest } from '../server_node/components/ClientRequestTypes.js';
-import { GetAllOpenAuctionsResponse } from '../server_node/components/ServerResponseTypes.js';
+import { GetAllOpenAuctionsResponse, GetAuctionInfoResponse } from '../server_node/components/ServerResponseTypes.js';
 import { StatusResults } from '../server_node/components/DBManager.js';
+import fs from 'fs';
+
+//TODO: Check if cookie user exists in db.
+/** @type {{
+ *      serverPort: String, 
+ *      nodes: {
+ *          host: String,
+ *          id: String,
+ *          port: Number
+ *      }[]
+ * }} */
+const config = JSON.parse(fs.readFileSync("./src/server_web/cluster-config.json", "utf8"));
 
 const app = express();
-const port = 5000;
+const port = config.serverPort;
 
+/**
+ * Map from nodeId to host and port.
+ * @type {Map<String, {host: String, port: Number}>}
+ */
 const ports = new Map();
 
-// FIXME: change to get info from configuration.
-// TODO: Add delay before reconnection.
-for (let i = 0; i < 5; i++) {
-    ports.set("Node" + (i + 1), 15001 + (i * 2))
-}
+config.nodes.forEach(node => {
+    ports.set(node.id, {host: node.host, port: node.port});
+});
+
 let nodeIds = [...ports.keys()];
 
 /** @type {SocketCl} */
 let sock = null;
 
+/**
+ * 
+ * @param {String} nodeId 
+ * @returns 
+ */
+function getHostString(nodeId){
+    let host = ports.get(nodeId); // Picks a random node to connect to.
+    return host.host + ":" + host.port;
+}
+
 async function connectToRaftCluster() {
-    let randomNodeId = nodeIds[Math.round(Math.random() * nodeIds.length)];
-    let host = "127.0.0.1:" + ports.get(randomNodeId);      // Picks a random node to connect to.
+    let nodeId = nodeIds[Math.round(Math.random() * (nodeIds.length - 1))];
+    let hostString = getHostString(nodeId);
     let leaderFound = false;
 
     do {
@@ -34,15 +59,19 @@ async function connectToRaftCluster() {
         /** @type {Promise<any>} */
         let waiting = new Promise((resolve) => { promiseResolve = resolve; });
 
-        sock = io("ws://" + host, {
+        sock = io("ws://" + hostString, {
             autoConnect: false,
-            reconnection: true,
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000,
+            reconnection: false,
             timeout: 5000
         }).connect();
 
+        let t = setTimeout(() => {    // If no response is received, try to connect to a different node.
+            sock.close();
+            promiseResolve();
+        }, 5000);
+
         sock.on("connect", () => {
+            clearTimeout(t);
             let timeout = setTimeout(() => {    // If no response is received, try to connect to a different node.
                 sock.close();
                 promiseResolve();
@@ -53,31 +82,33 @@ async function connectToRaftCluster() {
 
                 if (!response.isLeader) {
                     sock.close();
+                    console.log("Connected to non-leader %s!", nodeId);
                     if (response.leaderId) {    // Contacted node is not the leader but knows which other node is.
-                        host = "127.0.0.1:" + ports.get(response.leaderId);
+                        nodeId = response.leaderId;
+                        hostString = getHostString(nodeId);
+                        promiseResolve(); // Resolve the promise and confirm a response has been received.
                     } else {
-                        randomNodeId = nodeIds[Math.round(Math.random() * nodeIds.length)];
-                        host = "127.0.0.1:" + ports.get(randomNodeId);
+                        nodeId = nodeIds[Math.round(Math.random() * (nodeIds.length - 1))];
+                        hostString = getHostString(nodeId);
+                        setTimeout(promiseResolve, 1000);
                     }
                 } else {
                     leaderFound = true;
+                    promiseResolve(); // Resolve the promise and confirm a response has been received.
                 }
-
-                promiseResolve(); // Resolve the promise and confirm a response has been received.
             });
-
-
         });
 
-        sock.on("disconnect", (err) => {
-            console.log(err.message);
-            sock.close();
-            connectToRaftCluster();
+        sock.on("disconnect", (reason) => {
+            if(reason !== "io client disconnect"){
+                console.log("Disconnected!");
+                connectToRaftCluster();
+            }
         });
 
         await waiting;  // Pause until the response is returned to the socket.
     } while (!leaderFound);
-    console.log("Connected!");
+    console.log("Connected to leader %s!", nodeId);
 }
 
 connectToRaftCluster();
@@ -108,7 +139,7 @@ app.post("/createuser", async (req, res) => {
     console.log(req);
 
     await promise;
-    if (ret != null) {
+    if (ret > 0) {
         res.sendStatus(201);
     } else {
         res.sendStatus(409);
@@ -125,7 +156,7 @@ app.post("/loginuser", async (req, res) => {
     let ret = null;
 
     sock.emit(CommandType.LOGIN, new LoginRequest(req.body.name, req.body.pwd), async (/** @type {Promise<boolean>} */ response) => {
-        ret = await response;
+        ret = response;
         resolvePromise();
     });
 
@@ -134,8 +165,7 @@ app.post("/loginuser", async (req, res) => {
     await promise;
     if (ret != null) {
         // Sets the cookie with the expiration timestamp.
-        const expireTime = new Date().getTime() + 86400000; // 1 day.
-        res.cookie("user", expireTime, { maxAge: 86400000 });
+        res.cookie("user", req.body.name, { maxAge: 86400000 });
         res.sendStatus(200);
     } else {
         res.sendStatus(401);
@@ -162,7 +192,7 @@ app.post("/addAuction", async (req, res) => {
     /** @type {Number} */
     let ret = null;
 
-    sock.emit(CommandType.NEW_AUCTION, new NewAuctionRequest(req.body.username, req.body.startDate, req.body.objName, req.body.objDesc, req.body.startPrice),
+    sock.emit(CommandType.NEW_AUCTION, new NewAuctionRequest(req.cookies.user, new Date(), req.body.objName, req.body.objDescription, req.body.startingPrice),
         async (/** @type {?Number} */ response) => {
             ret = response;
             resolvePromise();
@@ -187,8 +217,33 @@ app.post("/getAllAuctions", async (req, res) => {
     /** @type {GetAllOpenAuctionsResponse[]} */
     let ret = null;
 
-    sock.emit(CommandType.GET_ALL_OPEN_AUCTIONS, null, async (/** @type {Promise<?GetAllOpenAuctionsResponse[]>} */ response) => {
-        ret = await response;
+    sock.emit(CommandType.GET_ALL_OPEN_AUCTIONS, null, async (/** @type {?GetAllOpenAuctionsResponse[]} */ response) => {
+        ret = response;
+        resolvePromise();
+    });
+
+    console.log(req);
+
+    await promise;
+    if (ret != null) {
+        res.status(200).send(ret);
+    } else {
+        res.sendStatus(500);
+    }
+});
+
+
+app.post("/getAuction", async (req, res) => {
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    /** @type {GetAuctionInfoResponse} */
+    let ret = null;
+
+    sock.emit(CommandType.GET_AUCTION_INFO, req.query.id, async (/** @type {?GetAuctionInfoResponse} */ response) => {
+        ret = response;
         resolvePromise();
     });
 
@@ -243,17 +298,12 @@ app.get('/', (req, res) => {
 // Middleware to check the validity of the cookie.
 const checkCookieValidity = (req, res, next) => {
     if (req.cookies.user) {
-        const now = new Date().getTime();
-        const cookieExpireTime = req.cookies.user;
-
-        if (now < cookieExpireTime) {
-            // If the cookie is still valid, we call next() to proceed to the next route.
-            next();
-            return;
-        }
+        // Valid cookie.
+        next();
+        return;
     }
 
-    // If the cookie has expired or is not present, we redirect the user to the login page.
+    // No cookie.
     res.redirect("/login");
 };
 

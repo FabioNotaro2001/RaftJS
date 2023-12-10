@@ -36,7 +36,7 @@ export class AuctionCreateData {
     /**
      * 
      * @param {String} username 
-     * @param {Date} startDate 
+     * @param {String} startDate 
      * @param {String} objName 
      * @param {String} objDesc 
      * @param {Number} startPrice 
@@ -44,7 +44,7 @@ export class AuctionCreateData {
     constructor(username, startDate, objName, objDesc, startPrice) {
         /** @type {String} */
         this.username = username;
-        /** @type {Date} */
+        /** @type {String} */
         this.startDate = startDate;
         /** @type {String} */
         this.objName = objName;

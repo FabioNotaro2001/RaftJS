@@ -37,7 +37,8 @@ export class RaftNode {
      * @param {String} databaseName Name of the database.
      * @param {Map<String, String>} otherNodes Pairs IPAddress-IdNode for the other nodes in the cluster.
      * @param {boolean} [debug=false] Flag indicating whether debugging is enabled.
-     */
+     * @param {boolean} [disabledDB=false] Flag indicating whether DB is disabled or not.
+    */
 
     constructor(id, portNodeProt, portWebServer, minLeaderTimeout, maxLeaderTimeout, minElectionTimeout, maxElectionTimeout, minElectionDelay, heartbeatTimeout, hostForDB, userForDB, passwordForDB, databaseName, otherNodes, debug = false, disabledDB = false) {
         /** @type {String} */

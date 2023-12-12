@@ -212,6 +212,19 @@ export class DBManager {
     }
 
     /**
+     * Checks if a given username matches a user in the database.
+     * @param {String} username The username.
+     * @returns Returns a promise that resolves to true if the user exists, otherwise false.
+     */
+        async queryUserExists(username) {
+            const [rows, fields] = await this.connection.execute(
+                'SELECT 1 AS Success FROM Users WHERE Username = ?',
+                [username]
+            );
+            return rows.length > 0;
+        }
+
+    /**
      * Query that mark a given auction as closed.
      * @param {Number} auctionId The id of the auction to be closed.
      * @param {String} closingDate The exact time when the auction is cloed.

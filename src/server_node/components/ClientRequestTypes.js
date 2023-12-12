@@ -140,3 +140,14 @@ export class GetLastBidsRequest {
         this.numOfBids = this.numOfBids;
     }
 }
+
+export class UserExistsRequest {
+    /**
+     * 
+     * @param {String} username The name of the user we want to verify exists.
+     */
+    constructor(username) {
+        /** @type {String} */
+        this.username = username;
+    }
+}

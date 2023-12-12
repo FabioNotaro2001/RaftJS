@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser';
 import { Socket as SocketCl, io } from "socket.io-client"
 import { CommandType } from '../server_node/enums/CommandType.js';
-import { NewAuctionRequest, NewUserRequest, NewBidRequest, LoginRequest } from '../server_node/components/ClientRequestTypes.js';
+import { NewAuctionRequest, NewUserRequest, NewBidRequest, LoginRequest, UserExistsRequest } from '../server_node/components/ClientRequestTypes.js';
 import { GetAllOpenAuctionsResponse, GetAuctionInfoResponse } from '../server_node/components/ServerResponseTypes.js';
 import { StatusResults } from '../server_node/components/DBManager.js';
 import fs from 'fs';
@@ -297,14 +297,20 @@ app.get('/', (req, res) => {
 
 // Middleware to check the validity of the cookie.
 const checkCookieValidity = (req, res, next) => {
-    if (req.cookies.user) {
-        // Valid cookie.
-        next();
+    if(!req.cookies.user){
+        // No cookie.
+        res.redirect("/login");
         return;
-    }
+    } 
 
-    // No cookie.
-    res.redirect("/login");
+    sock.emit(CommandType.USER_EXISTS, new UserExistsRequest(req.body.username),
+        async (/** @type {Boolean} */ response) => {
+            if(response){
+                // Valid cookie.
+                next();
+            }
+        });
+
 };
 
 // Using middleware for all routes that require cookie verification.

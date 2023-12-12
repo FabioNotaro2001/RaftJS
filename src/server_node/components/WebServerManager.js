@@ -5,11 +5,11 @@ import { State } from "../enums/State.js";
 import { UserCreateData, AuctionCreateData, BidCreateData, AuctionCloseData } from "./Log.js";
 import {
     NewUserRequest, NewBidRequest, NewAuctionRequest, LoginRequest, GetUserParticipationsRequest,
-    GetUserAuctionsRequest, GetNewBidsRequest, GetLastBidsRequest, GetAuctionInfoRequest, CloseAuctionRequest
+    GetUserAuctionsRequest, GetNewBidsRequest, GetLastBidsRequest, GetAuctionInfoRequest, CloseAuctionRequest, UserExistsRequest
 } from "./ClientRequestTypes.js";
 import { LogRecord } from "./Log.js";
 
-/** @typedef {NewUserRequest | NewBidRequest | NewAuctionRequest | LoginRequest | GetUserParticipationsRequest | GetUserAuctionsRequest | GetNewBidsRequest | GetLastBidsRequest | GetAuctionInfoRequest | CloseAuctionRequest} ClientRequest */
+/** @typedef {NewUserRequest | NewBidRequest | NewAuctionRequest | LoginRequest | GetUserParticipationsRequest | GetUserAuctionsRequest | GetNewBidsRequest | GetLastBidsRequest | GetAuctionInfoRequest | CloseAuctionRequest | UserExistsRequest} ClientRequest */
 
 export class WebServerManager {
     /**
@@ -119,6 +119,10 @@ export class WebServerManager {
             }
             case CommandType.GET_LAST_N_BIDS: {
                 callback(await this.raftNode.dbManager.queryViewNLatestBidsInAuction(args.auctionId, args.numOfBids));
+                break;
+            }
+            case CommandType.USER_EXISTS: {
+                callback(await this.raftNode.dbManager.queryUserExists(args.username));
                 break;
             }
         }

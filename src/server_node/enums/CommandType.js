@@ -13,4 +13,5 @@ export const CommandType = Object.freeze({
     GET_USER_AUCTIONS: "get_user_auctions",
     GET_USER_PARTICIPATIONS: "get_user_participations",
     GET_LAST_N_BIDS: "get_last_n_bids",
+    USER_EXISTS: "user_exists"
 });

@@ -12,14 +12,10 @@ $(document).ready(function () {
             contentType: "application/json"
         })
         .done(function (data, success, response) {
-            console.log(success);
-            if(success!=="success"){
-                addAlert("alert","alert-danger","Errore nella login.","");
-            } else {
-               window.location.href="/home";
-            }
+            window.location.href="/home";
         })
         .fail(function (response) {
+            addAlert("alert","alert-danger","Errore nella login.","");
             console.log(response);
         });
     });

@@ -163,7 +163,7 @@ app.post("/loginuser", async (req, res) => {
     console.log(req);
 
     await promise;
-    if (ret != null) {
+    if (ret) {
         // Sets the cookie with the expiration timestamp.
         res.cookie("user", req.body.name, { maxAge: 86400000 });
         res.sendStatus(200);
@@ -303,7 +303,7 @@ const checkCookieValidity = (req, res, next) => {
         return;
     } 
 
-    sock.emit(CommandType.USER_EXISTS, new UserExistsRequest(req.cookie.user),
+    sock.emit(CommandType.USER_EXISTS, new UserExistsRequest(req.cookies.user),
         async (/** @type {Boolean} */ response) => {
             if(response){
                 // Valid cookie.

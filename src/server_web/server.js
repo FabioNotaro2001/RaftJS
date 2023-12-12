@@ -297,7 +297,7 @@ app.get('/', (req, res) => {
 
 // Middleware to check the validity of the cookie.
 const checkCookieValidity = (req, res, next) => {
-    if(!req.cookies.user){
+    if(req.cookies.user==null){
         // No cookie.
         res.redirect("/login");
         return;

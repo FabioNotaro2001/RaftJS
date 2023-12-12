@@ -303,7 +303,7 @@ const checkCookieValidity = (req, res, next) => {
         return;
     } 
 
-    sock.emit(CommandType.USER_EXISTS, new UserExistsRequest(req.body.username),
+    sock.emit(CommandType.USER_EXISTS, new UserExistsRequest(req.cookie.user),
         async (/** @type {Boolean} */ response) => {
             if(response){
                 // Valid cookie.

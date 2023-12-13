@@ -78,6 +78,7 @@ $(document).ready(function () {
 
 function printInfoObj(){
     // TODO Prendo le info dal database dell'oggetto che all'asta e le stampo.
+    let id = url.searchParams.get('id');
     let jsonData = JSON.stringify({ auctionId: id });
 
     $.ajax({

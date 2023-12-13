@@ -374,7 +374,7 @@ export class DBManager {
 
             return results;
         } catch (err) {
-            return [];
+            return err;
         }
     }
 }

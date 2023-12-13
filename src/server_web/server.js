@@ -302,17 +302,18 @@ app.post("/getBids", async (req, res) => {
             resolvePromise();
         });
 
+        
+    await promise;
     console.log(ret);
 
-    await promise;
-    if (ret != null) {
+    if (ret != null && ret.length) {
         res.status(200);
 
         if (ret.length == 0) {
             res.send("No bids available");
         }
     } else {
-        res.sendStatus(500);
+        res.status(500).info(ret);
     }
 });
 

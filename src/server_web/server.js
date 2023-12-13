@@ -296,13 +296,13 @@ app.post("/getBids", async (req, res) => {
     /** @type {StatusResults} */
     let ret = null;
 
-    sock.emit(CommandType.NEW_BID, new GetLastBidsRequest(req.body.auctionId, 10),
+    sock.emit(CommandType.GET_LAST_N_BIDS, new GetLastBidsRequest(req.body.auctionId, 10),
         async (/** @type {StatusResults} */ response) => {
             ret = response;
             resolvePromise();
         });
 
-    console.log(req);
+    console.log(ret);
 
     await promise;
     if (ret != null) {
@@ -326,7 +326,7 @@ app.post("/getNewBids", async (req, res) => {
     /** @type {StatusResults} */
     let ret = null;
 
-    sock.emit(CommandType.NEW_BID, new GetLastBidsRequest(req.body.auctionId, 10),
+    sock.emit(CommandType.GET_NEW_BIDS, new GetLastBidsRequest(req.body.auctionId, 10),
         async (/** @type {StatusResults} */ response) => {
             ret = response;
             resolvePromise();

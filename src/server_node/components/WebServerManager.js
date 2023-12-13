@@ -66,7 +66,7 @@ export class WebServerManager {
      * 
      * @param {String} commandType Type of the command.
      * @param {ClientRequest} args The arguments of the command.
-     * @param {(response: Promise) => {}} callback 
+     * @param {(response: any) => {}} callback 
      */
     async onRequest(commandType, args, callback) {
         let prevLogIndex = this.raftNode.log.length - 1;

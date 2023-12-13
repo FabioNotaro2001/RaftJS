@@ -313,7 +313,7 @@ app.post("/getBids", async (req, res) => {
             res.send("No bids available");
         }
     } else {
-        res.status(500).info(ret);
+        res.status(500).send(ret);
     }
 });
 

@@ -374,7 +374,7 @@ export class DBManager {
 
             return results;
         } catch (err) {
-            return err;
+            return err; // FIXME: error is empty?
         }
     }
 }

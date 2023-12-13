@@ -5,7 +5,7 @@ import bodyParser from 'body-parser';
 import { Socket as SocketCl, io } from "socket.io-client"
 import { CommandType } from '../server_node/enums/CommandType.js';
 import { NewAuctionRequest, NewUserRequest, NewBidRequest, LoginRequest, UserExistsRequest, GetLastBidsRequest, GetAuctionInfoRequest } from '../server_node/components/ClientRequestTypes.js';
-import { GetAllOpenAuctionsResponse, GetAuctionInfoResponse } from '../server_node/components/ServerResponseTypes.js';
+import { GetAllOpenAuctionsResponse, GetAuctionInfoResponse, GetLastBidsResponse } from '../server_node/components/ServerResponseTypes.js';
 import { StatusResults } from '../server_node/components/DBManager.js';
 import fs from 'fs';
 
@@ -293,11 +293,11 @@ app.post("/getBids", async (req, res) => {
         resolvePromise = resolve;
     });
 
-    /** @type {StatusResults} */
+    /** @type {GetLastBidsResponse} */
     let ret = null;
 
     sock.emit(CommandType.GET_LAST_N_BIDS, new GetLastBidsRequest(req.body.auctionId, 10),
-        async (/** @type {StatusResults} */ response) => {
+        async (/** @type {GetLastBidsResponse} */ response) => {
             ret = response;
             resolvePromise();
         });

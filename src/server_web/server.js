@@ -293,7 +293,7 @@ app.post("/getBids", async (req, res) => {
         resolvePromise = resolve;
     });
 
-    /** @type {GetLastBidsResponse} */
+    /** @type {GetLastBidsResponse[]} */
     let ret = null;
 
     sock.emit(CommandType.GET_LAST_N_BIDS, new GetLastBidsRequest(req.body.auctionId, 10),
@@ -306,12 +306,11 @@ app.post("/getBids", async (req, res) => {
 
     await promise;
     if (ret != null) {
-        if(ret.success){
-            res.status(201);
-        } else {
-            res.status(400);
+        res.status(200);
+
+        if (ret.length == 0) {
+            res.send("No bids available");
         }
-        res.send(ret.info);
     } else {
         res.sendStatus(500);
     }

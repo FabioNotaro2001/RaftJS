@@ -74,8 +74,11 @@ $(document).ready(function () {
     });
 });
 
+// 2 minuti
+
 function printInfoObj(){
     // TODO Prendo le info dal database dell'oggetto che all'asta e le stampo.
+    let jsonData = JSON.stringify({ auctionId: id });
 
     $.ajax({
         type: "POST",
@@ -118,6 +121,9 @@ function printInfoObj(){
 }
 
 function loadBids(){
+    let id = url.searchParams.get('id');
+    let jsonData = JSON.stringify({ auctionId: id });
+
     let offerte;
     // TODO Prendo tutte le offerte dal database che ci sono e le stampo. Necessito delle offerte.
     $.ajax({

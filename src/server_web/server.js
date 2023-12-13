@@ -242,7 +242,7 @@ app.post("/getAuction", async (req, res) => {
     /** @type {GetAuctionInfoResponse} */
     let ret = null;
 
-    sock.emit(CommandType.GET_AUCTION_INFO, req.query.id, async (/** @type {?GetAuctionInfoResponse} */ response) => {
+    sock.emit(CommandType.GET_AUCTION_INFO, req.body.auctionId, async (/** @type {?GetAuctionInfoResponse} */ response) => {
         ret = response;
         resolvePromise();
     });

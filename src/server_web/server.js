@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser';
 import { Socket as SocketCl, io } from "socket.io-client"
 import { CommandType } from '../server_node/enums/CommandType.js';
-import { NewAuctionRequest, NewUserRequest, NewBidRequest, LoginRequest, UserExistsRequest, GetLastBidsRequest } from '../server_node/components/ClientRequestTypes.js';
+import { NewAuctionRequest, NewUserRequest, NewBidRequest, LoginRequest, UserExistsRequest, GetLastBidsRequest, GetAuctionInfoRequest } from '../server_node/components/ClientRequestTypes.js';
 import { GetAllOpenAuctionsResponse, GetAuctionInfoResponse } from '../server_node/components/ServerResponseTypes.js';
 import { StatusResults } from '../server_node/components/DBManager.js';
 import fs from 'fs';
@@ -242,7 +242,7 @@ app.post("/getAuction", async (req, res) => {
     /** @type {GetAuctionInfoResponse} */
     let ret = null;
 
-    sock.emit(CommandType.GET_AUCTION_INFO, req.body.auctionId, async (/** @type {?GetAuctionInfoResponse} */ response) => {
+    sock.emit(CommandType.GET_AUCTION_INFO, new GetAuctionInfoRequest(req.body.auctionId), async (/** @type {?GetAuctionInfoResponse} */ response) => {
         ret = response;
         resolvePromise();
     });

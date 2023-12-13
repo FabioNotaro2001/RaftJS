@@ -2,19 +2,25 @@ export class GetAuctionInfoResponse {
     /**
      * 
      * @param {String} creator 
+     * @param {String} objName 
+     * @param {String} objDesc 
      * @param {Number} startingPrice 
      * @param {Boolean} closed 
-     * @param {?Number} highestBid 
+     * @param {?Number} highestBidValue 
      */
-    constructor(creator, startingPrice, closed, highestBid) {
+    constructor(creator, objName, objDesc, startingPrice, closed, highestBidValue) {
         /** @type {String} */
         this.creator = creator;
+        /** @type {String} */
+        this.objName = objName;
+        /** @type {String} */
+        this.objDesc = objDesc;
         /** @type {Number} */
         this.startingPrice = startingPrice;
         /** @type {Boolean} */
         this.closed = closed;
         /** @type {?Number} */
-        this.highestBid = highestBid;
+        this.highestBid = highestBidValue;
     }
 }
 

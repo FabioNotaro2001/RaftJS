@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser';
 import { Socket as SocketCl, io } from "socket.io-client"
 import { CommandType } from '../server_node/enums/CommandType.js';
-import { NewAuctionRequest, NewUserRequest, NewBidRequest, LoginRequest, UserExistsRequest } from '../server_node/components/ClientRequestTypes.js';
+import { NewAuctionRequest, NewUserRequest, NewBidRequest, LoginRequest, UserExistsRequest, GetLastBidsRequest } from '../server_node/components/ClientRequestTypes.js';
 import { GetAllOpenAuctionsResponse, GetAuctionInfoResponse } from '../server_node/components/ServerResponseTypes.js';
 import { StatusResults } from '../server_node/components/DBManager.js';
 import fs from 'fs';
@@ -267,6 +267,66 @@ app.post("/addOffer", async (req, res) => {
     let ret = null;
 
     sock.emit(CommandType.NEW_BID, new NewBidRequest(req.body.username, req.body.auctionId, req.body.bidValue),
+        async (/** @type {StatusResults} */ response) => {
+            ret = response;
+            resolvePromise();
+        });
+
+    console.log(req);
+
+    await promise;
+    if (ret != null) {
+        if(ret.success){
+            res.status(201);
+        } else {
+            res.status(400);
+        }
+        res.send(ret.info);
+    } else {
+        res.sendStatus(500);
+    }
+});
+
+app.post("/getBids", async (req, res) => {
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    /** @type {StatusResults} */
+    let ret = null;
+
+    sock.emit(CommandType.NEW_BID, new GetLastBidsRequest(req.body.auctionId, 10),
+        async (/** @type {StatusResults} */ response) => {
+            ret = response;
+            resolvePromise();
+        });
+
+    console.log(req);
+
+    await promise;
+    if (ret != null) {
+        if(ret.success){
+            res.status(201);
+        } else {
+            res.status(400);
+        }
+        res.send(ret.info);
+    } else {
+        res.sendStatus(500);
+    }
+});
+
+app.post("/getNewBids", async (req, res) => {
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    /** @type {StatusResults} */
+    let ret = null;
+
+    sock.emit(CommandType.NEW_BID, new GetLastBidsRequest(req.body.auctionId, 10),
         async (/** @type {StatusResults} */ response) => {
             ret = response;
             resolvePromise();

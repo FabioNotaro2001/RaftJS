@@ -160,7 +160,7 @@ export class DBManager {
      */
     async queryGetAuctionInfo(auctionId) {
         let [rows, _] = await this.connection.execute(
-            `SELECT a.UserMaker AS um, a.StartingPrice AS sp, a.ClosingDate AS cd, b.Value AS hv 
+            `SELECT a.UserMaker AS um, a.ObjectName as obn, a.ObjectDescription as obd, a.StartingPrice AS sp, a.ClosingDate AS cd, b.Value AS hv 
             FROM Auctions AS a LEFT JOIN Bids AS b
                 ON a.WinnerBid = b.Id
             WHERE a.Id = ?`,
@@ -169,7 +169,7 @@ export class DBManager {
 
         if (rows.length > 0) {
             let auct = rows[0];
-            return new GetAuctionInfoResponse(auct.um, auct.sp, auct.cd, auct.hv);
+            return new GetAuctionInfoResponse(auct.um, auct.obn, auct.obd, auct.sp, auct.cd, auct.hv);
         }
         return null;
     }
@@ -360,6 +360,7 @@ export class DBManager {
                 `SELECT Id as bidId, UserMaker as user, Value as val, Time as time
                 FROM Bids
                 WHERE AuctionId = ?
+                ORDER BY Value DESC
                 LIMIT ?`,
                 [auctionId, n]
             );
@@ -368,7 +369,7 @@ export class DBManager {
             let results = [];
 
             rows.forEach(row => {
-                results.push(new GetLastBidsResponse(row.bidId, row.user, row,val, row.time));
+                results.push(new GetLastBidsResponse(row.bidId, row.user, row.val, row.time));
             });
 
             return results;

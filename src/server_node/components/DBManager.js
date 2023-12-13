@@ -374,6 +374,7 @@ export class DBManager {
 
             return results;
         } catch (err) {
+            console.error(err);
             return null;
         }
     }

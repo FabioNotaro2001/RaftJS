@@ -3,9 +3,9 @@ import { GetAllOpenAuctionsResponse, GetAuctionInfoResponse, GetLastBidsResponse
 
 export class StatusResults {
     /**
-     * 
-     * @param {Boolean} success 
-     * @param {String} info 
+     * Represents the result status of an operation.
+     * @param {Boolean} success Indicates whether the operation was successful.
+     * @param {String} info Additional information about the operation result.
      */
     constructor(success, info) {
         /** @type {Boolean} */
@@ -15,16 +15,18 @@ export class StatusResults {
     }
 
     /**
-     * 
-     * @param {String} info 
+     * Creates a success status result with the provided information.
+     * @param {String} info Additional information about the successful operation.
+     * @returns {StatusResults} A success status result.
      */
     static success(info) {
         return new StatusResults(true, info);
     }
 
     /**
-     * 
-     * @param {String} info 
+     * Creates a failure status result with the provided information.
+     * @param {String} info Additional information about the failed operation.
+     * @returns {StatusResults} A failure status result.
      */
     static failure(info) {
         return new StatusResults(false, info);
@@ -33,10 +35,11 @@ export class StatusResults {
 
 export class DBManager {
     /**
-     * Constructor for the DBManager class.
+     * Manages interactions with the MySQL database.
      * @param {String} host The database host.
      * @param {String} user The database user.
      * @param {String} password The database password.
+     * @param {String} database The name of the database.
      */
     constructor(host, user, password, database) {
         this.host = host;
@@ -51,18 +54,19 @@ export class DBManager {
 
     /**
      * Establishes a connection to the database.
+     * @returns {Promise<void>} A promise that resolves when the connection is established.
      */
     async connect() {
         this.connection = await mysql.createConnection({
-            host: this.host,    // According to configuration.
-            user: this.user, // Username.
-            password: this.password, // Password.
+            host: this.host,
+            user: this.user,
+            password: this.password,
             database: this.database
         });
 
         if (this.firstConnection) {
             // Delete all tables contents if this is the first connection. We assume they already exist.
-            // This is caused by the fact that at the beginning the log must be empty, so the database cannot contain any data, otherwise this can led to an inconsistency.
+            // This is caused by the fact that at the beginning the log must be empty, so the database cannot contain any data, otherwise this can lead to an inconsistency.
             await this.connection.query("SET FOREIGN_KEY_CHECKS = 0");
             await this.connection.query("TRUNCATE TABLE Users");
             await this.connection.query("TRUNCATE TABLE Bids");
@@ -84,9 +88,10 @@ export class DBManager {
 
     /**
      * Closes the connection to the database.
+     * @returns {Promise<void>} A promise that resolves when the connection is closed.
      */
     async disconnect() {
-        // Close the conncetion.
+        // Close the connection.
         await this.connection.end((err) => {
             if (err) {
                 console.error('Error while closing the connection:', err);
@@ -100,6 +105,7 @@ export class DBManager {
      * Adds a new user to the database.
      * @param {String} username The username of the new user.
      * @param {String} password The password of the new user.
+     * @returns {Promise<number|null>} A promise that resolves to the number of affected rows or null if unsuccessful.
      */
     async queryAddNewUser(username, password) {
         try {
@@ -108,12 +114,11 @@ export class DBManager {
                 'INSERT INTO Users (Username, Password) VALUES (?, ?)',
                 [username, password]
             );
-            
+
             return results.affectedRows;
         } catch (err) {
             return null;
         }
-
     }
 
     /**
@@ -121,7 +126,7 @@ export class DBManager {
      * @param {String} userMaker The user making the bid.
      * @param {Number} auctionId The ID of the auction.
      * @param {Number} value The bid value.
-     * @returns The result of the insert plus a description.
+     * @returns {Promise<StatusResults>} A promise that resolves to the result of the bid addition.
      */
     async queryAddNewBid(userMaker, auctionId, value) {
         try {
@@ -139,12 +144,12 @@ export class DBManager {
                     'INSERT INTO Bids (UserMaker, AuctionId, Value, Time) VALUES (?, ?, ?, ?)',
                     [userMaker, auctionId, value, new Date().toISOString()]
                 );
-                if(result.insertId){
+                if (result.insertId) {
                     await this.connection.execute(
                         'UPDATE Auctions SET WinnerBid = ? WHERE Id = ?',
                         [result.insertId, auctionId]
                     );
-                    StatusResults.success('Bid added.');
+                    return StatusResults.success('Bid added.');
                 }
             }
             return StatusResults.failure('Auction closed.');
@@ -156,7 +161,7 @@ export class DBManager {
     /**
      * Retrieves key information on a certain auction.
      * @param {String} auctionId The ID of the auction.
-     * @returns The auction's information.
+     * @returns {Promise<GetAuctionInfoResponse|null>} A promise that resolves to the auction's information or null if not found.
      */
     async queryGetAuctionInfo(auctionId) {
         let [rows, _] = await this.connection.execute(
@@ -174,6 +179,8 @@ export class DBManager {
         return null;
     }
 
+        // ... (previous comments)
+
     /**
      * Adds a new auction to the database.
      * @param {String} userMaker The user creating the auction.
@@ -181,7 +188,7 @@ export class DBManager {
      * @param {String} objectName The name of the auctioned object.
      * @param {String} objectDescription The description of the auctioned object.
      * @param {Number} startingPrice The starting price of the auction.
-     * @returns The id of the newly inserted auction, null if unsuccessful.
+     * @returns {Promise<number|null>} A promise that resolves to the id of the newly inserted auction or null if unsuccessful.
      */
     async queryAddNewAuction(userMaker, openingDate, objectName, objectDescription, startingPrice) {
         try {
@@ -201,7 +208,7 @@ export class DBManager {
      * Checks if a given username and password match a user in the database.
      * @param {String} username The username.
      * @param {String} password The password.
-     * @returns Returns a promise that resolves to true if the login is successful, otherwise false.
+     * @returns {Promise<Boolean>} A promise that resolves to true if the login is successful, otherwise false.
      */
     async queryForLogin(username, password) {
         const [rows, fields] = await this.connection.execute(
@@ -214,20 +221,21 @@ export class DBManager {
     /**
      * Checks if a given username matches a user in the database.
      * @param {String} username The username.
-     * @returns Returns a promise that resolves to true if the user exists, otherwise false.
+     * @returns {Promise<Boolean>} A promise that resolves to true if the user exists, otherwise false.
      */
-        async queryUserExists(username) {
-            const [rows, fields] = await this.connection.execute(
-                'SELECT 1 AS Success FROM Users WHERE Username = ?',
-                [username]
-            );
-            return rows.length > 0;
-        }
+    async queryUserExists(username) {
+        const [rows, fields] = await this.connection.execute(
+            'SELECT 1 AS Success FROM Users WHERE Username = ?',
+            [username]
+        );
+        return rows.length > 0;
+    }
 
     /**
-     * Query that mark a given auction as closed.
+     * Query that marks a given auction as closed.
      * @param {Number} auctionId The id of the auction to be closed.
-     * @param {String} closingDate The exact time when the auction is cloed.
+     * @param {String} closingDate The exact time when the auction is closed.
+     * @returns {Promise<StatusResults>} A promise that resolves to the result of closing the auction.
      */
     async queryCloseAuction(auctionId, closingDate) {
         try {
@@ -238,7 +246,7 @@ export class DBManager {
             );
 
             if (results.affectedRows > 0) {
-                return StatusResults.success('Succesfully closed auction.');
+                return StatusResults.success('Successfully closed auction.');
             }
             return StatusResults.failure('Failed to close auction.');
         } catch (err) {
@@ -248,6 +256,7 @@ export class DBManager {
 
     /**
      * Query that returns all the open auctions.
+     * @returns {Promise<GetAllOpenAuctionsResponse[]|null>} A promise that resolves to an array of open auctions or null if unsuccessful.
      */
     async queryViewAllOpenAuctions() {
         try {
@@ -275,6 +284,7 @@ export class DBManager {
      * Query that returns all the bids of a given auction following a specified one.
      * @param {Number} auctionId The id of the auction to check.
      * @param {Number} lastBidId The id of the starting bid to return.
+     * @returns {Promise<GetNewBidsResponse[]|null>} A promise that resolves to an array of new bids or null if unsuccessful.
      */
     async queryGetNewerBids(auctionId, lastBidId) {
         try {
@@ -300,7 +310,8 @@ export class DBManager {
 
     /**
      * Query that returns all the auction created by a given user.
-     * @param {Number} userId The id of the user whose auction must be showed.
+     * @param {Number} userId The id of the user whose auctions must be shown.
+     * @returns {Promise<GetUserAuctionsResponse[]|null>} A promise that resolves to an array of user auctions or null if unsuccessful.
      */
     async queryViewAllAuctionsOfAUser(userId) {
         try {
@@ -323,8 +334,9 @@ export class DBManager {
     }
 
     /**
-     * Query that returns all the auction in which a given user has partecipated.
-     * @param {Number} userId The id of the user we want to check which auctions have been participated by him.
+     * Query that returns all the auctions in which a given user has participated.
+     * @param {Number} userId The id of the user whose participated auctions must be checked.
+     * @returns {Promise<GetUserParticipationsResponse[]|null>} A promise that resolves to an array of user participations or null if unsuccessful.
      */
     async queryViewAllAuctionsParticipatedByUser(userId) {
         try {
@@ -340,7 +352,7 @@ export class DBManager {
             let results = [];
 
             rows.forEach(row => {
-                results.push(new GetUserParticipationsResponse(row.id, row.objName, row.objDesc, row.date, row.sp)); 
+                results.push(new GetUserParticipationsResponse(row.id, row.objName, row.objDesc, row.date, row.sp));
             });
 
             return results;
@@ -351,8 +363,9 @@ export class DBManager {
 
     /**
      * Query that returns the last n bids of a given auction.
-     * @param {Number} auctionId Id of the auction we want to get the lates n bids.
-     * @param {Number} n Number of bids that must be returned.
+     * @param {Number} auctionId Id of the auction from which to get the latest n bids.
+     * @param {Number} n Number of bids to be returned.
+     * @returns {Promise<GetLastBidsResponse[]|Error>} A promise that resolves to an array of last n bids or an error if unsuccessful.
      */
     async queryViewNLatestBidsInAuction(auctionId, n) {
         try {

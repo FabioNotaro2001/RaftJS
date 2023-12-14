@@ -320,7 +320,7 @@ export class RaftNode {
                     /** @type {BidCreateData} */
                     let data = logEntry.logData;
 
-                    if (!this.dbManager) {
+                    if (!this.disabledDB) {
                         res = await this.dbManager.queryAddNewBid(data.username, data.auctionId, data.value);
                     }
                     this.debugLog("Added new bid to database.");

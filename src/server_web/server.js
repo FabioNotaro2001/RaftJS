@@ -4,12 +4,11 @@ import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser';
 import { Socket as SocketCl, io } from "socket.io-client"
 import { CommandType } from '../server_node/enums/CommandType.js';
-import { NewAuctionRequest, NewUserRequest, NewBidRequest, LoginRequest, UserExistsRequest, GetLastBidsRequest, GetAuctionInfoRequest } from '../server_node/components/ClientRequestTypes.js';
+import { CloseAuctionRequest, NewAuctionRequest, NewUserRequest, NewBidRequest, LoginRequest, UserExistsRequest, GetLastBidsRequest, GetAuctionInfoRequest } from '../server_node/components/ClientRequestTypes.js';
 import { GetAllOpenAuctionsResponse, GetAuctionInfoResponse, GetLastBidsResponse } from '../server_node/components/ServerResponseTypes.js';
 import { StatusResults } from '../server_node/components/DBManager.js';
 import fs from 'fs';
 
-//TODO: Check if cookie user exists in db.
 /** @type {{
  *      serverPort: String, 
  *      nodes: {
@@ -266,7 +265,7 @@ app.post("/addOffer", async (req, res) => {
     /** @type {StatusResults} */
     let ret = null;
 
-    sock.emit(CommandType.NEW_BID, new NewBidRequest(req.body.username, req.body.auctionId, req.body.bidValue),
+    sock.emit(CommandType.NEW_BID, new NewBidRequest(req.cookies.user, req.body.auctionId, req.body.bidValue),
         async (/** @type {StatusResults} */ response) => {
             ret = response;
             resolvePromise();
@@ -306,17 +305,43 @@ app.post("/getBids", async (req, res) => {
     await promise;
     console.log(ret);
 
-    if (ret != null && ret.length) {
-        res.status(200);
+    if (ret != null && ret.length != null) {
+        res.status(200).send(ret);
 
-        if (ret.length == 0) {
-            res.send("No bids available");
-        }
     } else {
-        res.status(500).send(ret);
+        res.status(500);
     }
 });
 
+app.post("/closeAuction", async (req, res) =>{
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    /** @type {StatusResults} */
+    let ret = null;
+
+    sock.emit(CommandType.CLOSE_AUCTION, new CloseAuctionRequest(req.body.auctionId, new Date()),
+        async (/** @type {StatusResults} */ response) => {
+            ret = response;
+            resolvePromise();
+        });
+
+    console.log(req);
+
+    await promise;
+    if (ret != null) {
+        if(ret.success){
+            res.status(200);
+        } else {
+            res.status(400);
+        }
+        res.send(ret.info);
+    } else {
+        res.sendStatus(500);
+    }
+});
 app.post("/getNewBids", async (req, res) => {
     let resolvePromise;
     let promise = new Promise((resolve) => {
@@ -347,8 +372,8 @@ app.post("/getNewBids", async (req, res) => {
     }
 });
 
-app.get('/', (req, res) => {
-    if (req.cookies.user) {
+app.get('/', async (req, res) => {
+    if (req.cookies.user && await userExists(req.cookies.user)) {
         res.redirect("/home");
     } else {
         res.redirect("/login");
@@ -356,22 +381,37 @@ app.get('/', (req, res) => {
 });
 
 // Middleware to check the validity of the cookie.
-const checkCookieValidity = (req, res, next) => {
+const checkCookieValidity = async (req, res, next) => {
     if(req.cookies.user==null){
         // No cookie.
         res.redirect("/login");
         return;
     } 
 
-    sock.emit(CommandType.USER_EXISTS, new UserExistsRequest(req.cookies.user),
-        async (/** @type {Boolean} */ response) => {
-            if(response){
-                // Valid cookie.
-                next();
-            }
-        });
-
+    if(await userExists(req.cookies.user)){
+        next();
+        return;
+    }
+    res.redirect("/login");
 };
+
+async function userExists(user){
+    let result;
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    }); 
+
+    sock.emit(CommandType.USER_EXISTS, new UserExistsRequest(user),
+        async (/** @type {Boolean} */ response) => {
+            result = response;
+            resolvePromise();
+    });
+
+    await promise;
+    return result ?? false;
+}
+
 
 // Using middleware for all routes that require cookie verification.
 app.use(['/home', '/auction'], checkCookieValidity);

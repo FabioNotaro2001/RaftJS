@@ -144,10 +144,10 @@ export class DBManager {
                     'INSERT INTO Bids (UserMaker, AuctionId, Value, Time) VALUES (?, ?, ?, ?)',
                     [userMaker, auctionId, value, new Date().toISOString()]
                 );
-                if (result.insertId) {
+                if (results.insertId) {
                     await this.connection.execute(
                         'UPDATE Auctions SET WinnerBid = ? WHERE Id = ?',
-                        [result.insertId, auctionId]
+                        [results.insertId, auctionId]
                     );
                     return StatusResults.success('Bid added.');
                 }
@@ -310,14 +310,14 @@ export class DBManager {
 
     /**
      * Query that returns all the auction created by a given user.
-     * @param {Number} userId The id of the user whose auctions must be shown.
+     * @param {String} username The username of the user whose auctions must be shown.
      * @returns {Promise<GetUserAuctionsResponse[]|null>} A promise that resolves to an array of user auctions or null if unsuccessful.
      */
-    async queryViewAllAuctionsOfAUser(userId) {
+    async queryViewAllAuctionsOfAUser(username) {
         try {
             const [rows, fields] = await this.connection.execute(
                 'SELECT Id AS id, ObjectName AS objName, ObjectDescription AS objDesc, OpeningDate AS opDate, ClosingDate AS clDate, StartingPrice AS sp FROM Auctions WHERE UserMaker = ?',
-                [userId]
+                [username]
             );
 
             /** @type {GetUserAuctionsResponse[]} */
@@ -335,17 +335,17 @@ export class DBManager {
 
     /**
      * Query that returns all the auctions in which a given user has participated.
-     * @param {Number} userId The id of the user whose participated auctions must be checked.
+     * @param {String} username The username of the user whose participated auctions must be checked.
      * @returns {Promise<GetUserParticipationsResponse[]|null>} A promise that resolves to an array of user participations or null if unsuccessful.
      */
-    async queryViewAllAuctionsParticipatedByUser(userId) {
+    async queryViewAllAuctionsParticipatedByUser(username) {
         try {
             const [rows, fields] = await this.connection.execute(
                 `SELECT a.Id AS id, a.ObjectName AS objName, a.ObjectDescription AS objDesc, a.OpeningDate AS date, a.StartingPrice as sp
                 FROM Auctions AS a INNER JOIN Bids AS b
                     ON b.AuctionId = a.Id AND b.UserMaker = ?
                 GROUP BY a.Id`,
-                [userId]
+                [username]
             );
 
             /** @type {GetUserParticipationsResponse[]} */
@@ -387,7 +387,7 @@ export class DBManager {
 
             return results;
         } catch (err) {
-            return err; // FIXME: error is empty?
+            return null;
         }
     }
 }

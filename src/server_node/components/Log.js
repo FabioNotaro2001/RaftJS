@@ -59,12 +59,12 @@ export class AuctionCloseData {
     /**
      * 
      * @param {Number} auctionId 
-     * @param {Date} closingDate 
+     * @param {String} closingDate 
      */
     constructor(auctionId, closingDate) {
         /** @type {Number} */
         this.auctionId = auctionId;
-        /** @type {Date} */
+        /** @type {String} */
         this.closingDate = closingDate;
     }
 }

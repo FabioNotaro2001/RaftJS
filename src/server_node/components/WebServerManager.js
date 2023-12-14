@@ -50,18 +50,6 @@ export class WebServerManager {
         this.webServerServer.disconnectSockets(true);
     }
 
-    propagateNewLogEntry(prevLogIndex, prevLogTerm) {
-        this.raftNode.matchIndex.forEach((i, nodeId) => {
-            if (i == this.raftNode.commitIndex) {
-                let temp = this.raftNode.log.at(-1);
-                let record = new LogRecord(temp.term, temp.commandType, temp.logData, null);
-                record.callback = null;
-                this.raftNode.rpcManager.sendReplicationTo(this.raftNode.sockets.get(nodeId), this.raftNode.currentTerm, prevLogIndex, prevLogTerm, [record], this.raftNode.commitIndex);
-                this.raftNode.resetHeartbeatTimeout(nodeId);
-            }
-        });
-    }
-
     /**
      * 
      * @param {String} commandType Type of the command.
@@ -75,12 +63,10 @@ export class WebServerManager {
         switch (commandType) {
             case CommandType.NEW_USER: {
                 this.raftNode.log.push(new LogRecord(this.raftNode.currentTerm, commandType, new UserCreateData(args.username, args.password), callback));
-                this.propagateNewLogEntry(prevLogIndex, prevLogTerm);
                 break;
             }
             case CommandType.NEW_BID: {
-                this.raftNode.log.push(new LogRecord(this.raftNode.currentTerm, commandType, new BidCreateData(args.user, args.auctionId, args.value), callback));
-                this.propagateNewLogEntry(prevLogIndex, prevLogTerm);
+                this.raftNode.log.push(new LogRecord(this.raftNode.currentTerm, commandType, new BidCreateData(args.username, Number(args.auctionId), Number(args.bidValue)), callback));
                 break;
             }
             case CommandType.GET_AUCTION_INFO: {
@@ -88,8 +74,7 @@ export class WebServerManager {
                 break;
             }
             case CommandType.NEW_AUCTION: {
-                this.raftNode.log.push(new LogRecord(this.raftNode.currentTerm, commandType, new AuctionCreateData(args.username, args.startDate, args.objName, args.objDesc, args.startPrice), callback));
-                this.propagateNewLogEntry(prevLogIndex, prevLogTerm);
+                this.raftNode.log.push(new LogRecord(this.raftNode.currentTerm, commandType, new AuctionCreateData(args.username, args.startDate, args.objName, args.objDesc, Number(args.startPrice)), callback));
                 break;
             }
             case CommandType.LOGIN: {
@@ -97,8 +82,7 @@ export class WebServerManager {
                 break;
             }
             case CommandType.CLOSE_AUCTION: {
-                this.raftNode.log.push(new LogRecord(this.raftNode.currentTerm, commandType, new AuctionCloseData(args.auctionId, args.closingDate), callback));
-                this.propagateNewLogEntry(prevLogIndex, prevLogTerm);
+                this.raftNode.log.push(new LogRecord(this.raftNode.currentTerm, commandType, new AuctionCloseData(Number(args.auctionId), args.closingDate), callback));
                 break;
             }
             case CommandType.GET_ALL_OPEN_AUCTIONS: {
@@ -106,7 +90,7 @@ export class WebServerManager {
                 break;
             }
             case CommandType.GET_NEW_BIDS: {
-                callback(await this.raftNode.dbManager.queryGetNewerBids(args.auctionId, args.lastBidId));
+                callback(await this.raftNode.dbManager.queryGetNewerBids(Number(args.auctionId), Number(args.lastBidId)));
                 break;
             }
             case CommandType.GET_USER_AUCTIONS: {
@@ -118,7 +102,7 @@ export class WebServerManager {
                 break;
             }
             case CommandType.GET_LAST_N_BIDS: {
-                callback(await this.raftNode.dbManager.queryViewNLatestBidsInAuction(args.auctionId, args.numOfBids));
+                callback(await this.raftNode.dbManager.queryViewNLatestBidsInAuction(Number(args.auctionId), Number(args.numOfBids)));
                 break;
             }
             case CommandType.USER_EXISTS: {

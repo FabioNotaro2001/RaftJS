@@ -1,9 +1,3 @@
-// TODO Parte di prova da cancellare dopo.
-let aste = [
-    { ID: 0, partenza: 200, prezzo: 200, oggetto: "Lumaca" },
-    { ID: 1, partenza: 100, prezzo: null, oggetto: "Patata" }
-];
-
 $(document).ready(function () {
     fetchOpenAuctions();
 
@@ -50,8 +44,6 @@ $(document).ready(function () {
                     addAlert("alert", "alert-danger", "Errore nell'inserimento dell'asta.", "");
                 } else {
                     addAlert("alert", "alert-success", "Asta inserita con successo!", "");
-                    //TODO elimina solo la riga sottostante che è di prova.
-                    aste.push({ partenza: datas.initialPrice, prezzo: null, oggetto: datas.nameObject });
                     fetchOpenAuctions();
                 }
             })
@@ -71,7 +63,6 @@ $(document).ready(function () {
 });
 
 function fetchOpenAuctions() {
-    //TODO Prendo tutte le aste che ci sono e le stampo. Necessito delle aste.
     $("#cont_aste").html("");
     
     $.ajax({

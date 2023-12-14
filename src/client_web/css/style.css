@@ -714,4 +714,8 @@
   .navbar{
     padding: 0;
   }
+
+  .btn-hidden{
+    display: none;
+  }
   /*# sourceMappingURL=style.css.map */

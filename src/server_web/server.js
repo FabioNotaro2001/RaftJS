@@ -305,7 +305,7 @@ app.post("/getUserParticipations", async (req, res) => {
     /** @type {GetUserParticipationsResponse[]} */
     let ret = null;
 
-    sock.emit(CommandType.GET_USER_AUCTIONS, new GetUserParticipationsRequest(req.body.user), async (/** @type {?GetUserAuctionsResponse[]} */ response) => {
+    sock.emit(CommandType.GET_USER_PARTICIPATIONS, new GetUserParticipationsRequest(req.body.user), async (/** @type {?GetUserAuctionsResponse[]} */ response) => {
         ret = response;
         resolvePromise();
     });

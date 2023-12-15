@@ -319,7 +319,7 @@ export class DBManager {
                 `SELECT a.Id AS id, a.ObjectName AS objName, a.ObjectDescription AS objDesc, a.OpeningDate AS opDate, a.ClosingDate AS clDate, a.StartingPrice AS sp, b.Value AS hv 
                 FROM Auctions AS a LEFT JOIN Bids AS b
                     ON a.WinnerBid = b.Id
-                WHERE UserMaker = ?`,
+                WHERE a.UserMaker = ?`,
                 [username]
             );
 

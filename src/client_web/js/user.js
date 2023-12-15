@@ -8,7 +8,7 @@ $(document).ready(function () {
         $.ajax({
             type: "POST",
             url: "/logoutuser",
-            data: {},
+            data: "{}",
             processData: false,
             contentType: "application/json"
         })

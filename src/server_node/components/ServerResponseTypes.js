@@ -1,12 +1,14 @@
+/**
+ * Response class for retrieving auction information.
+ */
 export class GetAuctionInfoResponse {
     /**
-     * 
-     * @param {String} creator 
-     * @param {String} objName 
-     * @param {String} objDesc 
-     * @param {Number} startingPrice 
-     * @param {Boolean} closed 
-     * @param {?Number} highestBidValue 
+     * @param {String} creator Creator of the auction.
+     * @param {String} objName Name of the auctioned object.
+     * @param {String} objDesc Description of the auctioned object.
+     * @param {Number} startingPrice Starting price of the auction.
+     * @param {Boolean} closed Indicates whether the auction is closed.
+     * @param {?Number} highestBidValue Value of the highest bid, if any.
      */
     constructor(creator, objName, objDesc, startingPrice, closed, highestBidValue) {
         /** @type {String} */
@@ -24,15 +26,17 @@ export class GetAuctionInfoResponse {
     }
 }
 
+/**
+ * Response class for retrieving information on all open auctions.
+ */
 export class GetAllOpenAuctionsResponse {
     /**
-     * 
-     * @param {Number} auctionId 
-     * @param {String} objName 
-     * @param {?String} objDescription 
-     * @param {String} openingDate 
-     * @param {Number} startingPrice 
-     * @param {?Number} highestBidValue
+     * @param {Number} auctionId ID of the auction.
+     * @param {String} objName Name of the auctioned object.
+     * @param {?String} objDescription Description of the auctioned object.
+     * @param {String} openingDate Date when the auction opens.
+     * @param {Number} startingPrice Starting price of the auction.
+     * @param {?Number} highestBidValue Value of the highest bid, if any.
      */
     constructor(auctionId, objName, objDescription, openingDate, startingPrice, highestBidValue) {
         /** @type {Number} */
@@ -45,18 +49,20 @@ export class GetAllOpenAuctionsResponse {
         this.openingDate = new Date(openingDate);
         /** @type {Number} */
         this.startingPrice = startingPrice;
-        /** @type {?Number}*/
+        /** @type {?Number} */
         this.highestBidValue = highestBidValue;
     }
 }
 
+/**
+ * Response class for retrieving information on new bids.
+ */
 export class GetNewBidsResponse {
     /**
-     * 
-     * @param {Number} bidId 
-     * @param {String} userMaker 
-     * @param {Number} bidValue 
-     * @param {String} bidDate 
+     * @param {Number} bidId ID of the bid.
+     * @param {String} userMaker User making the bid.
+     * @param {Number} bidValue Value of the bid.
+     * @param {String} bidDate Date when the bid was made.
      */
     constructor(bidId, userMaker, bidValue, bidDate) {
         /** @type {Number} */
@@ -70,17 +76,19 @@ export class GetNewBidsResponse {
     }
 }
 
+/**
+ * Response class for retrieving information on auctions associated with a user.
+ */
 export class GetUserAuctionsResponse {
     /**
-     * 
-     * @param {Number} auctionId 
-     * @param {String} objName 
-     * @param {?String} objDescription 
-     * @param {String} openingDate 
-     * @param {?String} closingDate 
-     * @param {Number} startingPrice 
-    */
-   constructor(auctionId, objName, objDescription, openingDate, closingDate, startingPrice) {
+     * @param {Number} auctionId ID of the auction.
+     * @param {String} objName Name of the auctioned object.
+     * @param {?String} objDescription Description of the auctioned object.
+     * @param {String} openingDate Date when the auction opens.
+     * @param {?String} closingDate Date when the auction closes, if available.
+     * @param {Number} startingPrice Starting price of the auction.
+     */
+    constructor(auctionId, objName, objDescription, openingDate, closingDate, startingPrice) {
         /** @type {Number} */
         this.auctionId = auctionId;
         /** @type {String} */
@@ -96,16 +104,18 @@ export class GetUserAuctionsResponse {
     }
 }
 
+/**
+ * Response class for retrieving information on user participations in auctions.
+ */
 export class GetUserParticipationsResponse { 
     /**
-     * 
-     * @param {Number} auctionId 
-     * @param {String} objName 
-     * @param {?String} objDescription 
-     * @param {String} openingDate 
-     * @param {Number} startingPrice 
-    */
-   constructor(auctionId, objName, objDescription, openingDate, startingPrice) {
+     * @param {Number} auctionId ID of the auction.
+     * @param {String} objName Name of the auctioned object.
+     * @param {?String} objDescription Description of the auctioned object.
+     * @param {String} openingDate Date when the auction opens.
+     * @param {Number} startingPrice Starting price of the auction.
+     */
+    constructor(auctionId, objName, objDescription, openingDate, startingPrice) {
        /** @type {Number} */
        this.auctionId = auctionId;
        /** @type {?String} */
@@ -119,14 +129,16 @@ export class GetUserParticipationsResponse {
     }
 }
 
+/**
+ * Response class for retrieving information on the latest bids.
+ */
 export class GetLastBidsResponse { 
     /**
-     * 
-     * @param {Number} bidId 
-     * @param {String} userMaker 
-     * @param {Number} bidValue 
-     * @param {String} bidDate 
-    */
+     * @param {Number} bidId ID of the bid.
+     * @param {String} userMaker User making the bid.
+     * @param {Number} bidValue Value of the bid.
+     * @param {String} bidDate Date when the bid was made.
+     */
    constructor(bidId, userMaker, bidValue, bidDate) {
         /** @type {Number} */
         this.bidId = bidId;

@@ -11,11 +11,13 @@ import { LogRecord } from "./Log.js";
 
 /** @typedef {NewUserRequest | NewBidRequest | NewAuctionRequest | LoginRequest | GetUserParticipationsRequest | GetUserAuctionsRequest | GetNewBidsRequest | GetLastBidsRequest | GetAuctionInfoRequest | CloseAuctionRequest | UserExistsRequest} ClientRequest */
 
+/**
+ * Manager for handling communication with the web server.
+ */
 export class WebServerManager {
     /**
-     * 
-     * @param {RaftNode} raftNode 
-     * @param {*} webServerPort 
+     * @param {RaftNode} raftNode The RaftNode instance associated with this manager.
+     * @param {*} webServerPort Port for the web server.
      */
     constructor(raftNode, webServerPort) {
         this.raftNode = raftNode;
@@ -25,41 +27,50 @@ export class WebServerManager {
         this.webServerServer = null;
     }
 
+    /**
+     * Starts the web server.
+     */
     start() {
         this.webServerServer = new Server();
 
         this.webServerServer.on("connection", socket => {    // Handle connections to this node.
+            // Register event listeners for each command type
             Object.values(CommandType).forEach((commandType) => {
                 socket.on(commandType, (args, callback) => this.onRequest(commandType, args, callback));
             });
 
+            // Check if the node is the leader and respond accordingly
             socket.on("isLeader", (callback) => {
                 callback({
                     isLeader: this.raftNode.state == State.LEADER,
                     leaderId: this.raftNode.state == State.LEADER ? null : this.raftNode.currentLeaderId
                 });
-            })
+            });
         });
-
 
         this.webServerServer.listen(this.webServerPort);
     }
 
+    /**
+     * Stops the web server.
+     */
     stop() {
         this.webServerServer.close();
         this.webServerServer.disconnectSockets(true);
     }
 
     /**
-     * 
+     * Handles incoming client requests.
      * @param {String} commandType Type of the command.
      * @param {ClientRequest} args The arguments of the command.
-     * @param {(response: any) => {}} callback 
+     * @param {(response: any) => {}} callback Callback function to send the response.
      */
     async onRequest(commandType, args, callback) {
+        // Get the index and term for the previous log entry
         let prevLogIndex = this.raftNode.log.length - 1;
         let prevLogTerm = this.raftNode.log.at(-1);
 
+        // Process each command type
         switch (commandType) {
             case CommandType.NEW_USER: {
                 this.raftNode.log.push(new LogRecord(this.raftNode.currentTerm, commandType, new UserCreateData(args.username, args.password), callback));

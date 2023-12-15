@@ -38,8 +38,7 @@ export class RaftNode {
      * @param {Map<String, String>} otherNodes Pairs IPAddress-IdNode for the other nodes in the cluster.
      * @param {boolean} [debug=false] Flag indicating whether debugging is enabled.
      * @param {boolean} [disabledDB=false] Flag indicating whether DB is disabled or not.
-    */
-
+     */
     constructor(id, portNodeProt, portWebServer, minLeaderTimeout, maxLeaderTimeout, minElectionTimeout, maxElectionTimeout, minElectionDelay, heartbeatTimeout, hostForDB, userForDB, passwordForDB, databaseName, otherNodes, debug = false, disabledDB = false) {
         /** @type {String} */
         this.id = id;
@@ -279,6 +278,10 @@ export class RaftNode {
         this.debugLog("Node stopped");
     }
 
+    /**
+     * Applies a log entry at the given index.
+     * @param {Number} index The index of the log entry to apply.
+     */
     async applyLogEntry(index) {
         let logEntry = this.log.at(index);
 
@@ -637,9 +640,9 @@ export class RaftNode {
         this.resetElectionTimeout();    // Set a timeout in case the election doesn't end.
         this.resetHeartbeatTimeout();   // Set a timeout in case other nodes do not respond.
     }
+
     /**
      * Set a timeout for communications from the leader.
-     * 
      * In case the timeout expires, starts a new election as a candidate.
      */
     waitForLeaderTimeout() {
@@ -653,7 +656,6 @@ export class RaftNode {
 
     /**
      * Set a timeout for the current election.
-     * 
      * In case the timeout expires, starts a new election as a candidate.
      */
     waitForElectionTimeout() {
@@ -667,7 +669,6 @@ export class RaftNode {
 
     /**
      * Set a timeout to wait for any heartbeat.
-     * 
      * In case the timeout expires, sends another heartbeat of type depending on the current state.
      * @param {Number} matchIndex Index of highest log entry known to be replicated on each follower node.
      * @param {String | null} nodeId The node to which we must send the heartbeat when the timeout expires. If null, the heartbeat is sent to all other nodes.
@@ -732,7 +733,7 @@ export class RaftNode {
 
     /**
      * Resets the heartbeat timeout for a specific node or all nodes.
-     * @param {String | null} nodeId - The ID of the node for which to reset the heartbeat timeout.
+     * @param {String | null} nodeId The ID of the node for which to reset the heartbeat timeout.
      */
     resetHeartbeatTimeout(nodeId = null) {
         this.stopHeartbeatTimeout(nodeId);
@@ -771,6 +772,10 @@ export class RaftNode {
         }
     }
 
+    /**
+     * Debug log utility method.
+     * @param {string} message The message to log in debug mode.
+     */
     debugLog(message, ...optionalParams) {
         if (this.debug) {
             console.log("[" + this.id + " (" + this.state + ")]: " + message, ...optionalParams);

@@ -7,10 +7,10 @@ import { StatusResults } from "./DBManager.js";
 export class LogRecord {
     /**
      * Creates a new log record.
-     * @param {Number} term 
-     * @param {String} commandType
-     * @param {UserCreateData | AuctionCreateData | AuctionCloseData | BidCreateData} logData
-     * @param {*} callback
+     * @param {Number} term The term associated with the log record.
+     * @param {CommandType} commandType The type of command associated with the log record.
+     * @param {UserCreateData | AuctionCreateData | AuctionCloseData | BidCreateData} logData The data associated with the log record.
+     * @param {*} callback The callback associated with the log record.
      */
     constructor(term, commandType, logData, callback) {
         this.term = term;
@@ -20,11 +20,14 @@ export class LogRecord {
     }
 }
 
+/**
+ * Data structure for creating a new user.
+ */
 export class UserCreateData {
     /**
-     * 
-     * @param {String} username 
-     * @param {String} password 
+     * Creates user creation data.
+     * @param {String} username The username of the new user.
+     * @param {String} password The password of the new user.
      */
     constructor(username, password) {
         this.username = username;
@@ -32,14 +35,17 @@ export class UserCreateData {
     }
 }
 
+/**
+ * Data structure for creating a new auction.
+ */
 export class AuctionCreateData {
     /**
-     * 
-     * @param {String} username 
-     * @param {String} startDate 
-     * @param {String} objName 
-     * @param {String} objDesc 
-     * @param {Number} startPrice 
+     * Creates auction creation data.
+     * @param {String} username The username of the user creating the auction.
+     * @param {String} startDate The start date of the auction.
+     * @param {String} objName The name of the object being auctioned.
+     * @param {String} objDesc The description of the object being auctioned.
+     * @param {Number} startPrice The starting price of the auction.
      */
     constructor(username, startDate, objName, objDesc, startPrice) {
         /** @type {String} */
@@ -55,11 +61,14 @@ export class AuctionCreateData {
     }
 }
 
+/**
+ * Data structure for closing an auction.
+ */
 export class AuctionCloseData {
     /**
-     * 
-     * @param {Number} auctionId 
-     * @param {String} closingDate 
+     * Creates auction closure data.
+     * @param {Number} auctionId The ID of the auction being closed.
+     * @param {String} closingDate The date of the auction closure.
      */
     constructor(auctionId, closingDate) {
         /** @type {Number} */
@@ -69,19 +78,22 @@ export class AuctionCloseData {
     }
 }
 
+/**
+ * Data structure for creating a new bid.
+ */
 export class BidCreateData {
     /**
-     * 
-     * @param {String} username 
-     * @param {Number} auctionId 
-     * @param {Number} value 
-    */
-   constructor(username, auctionId, value) {
-       /** @type {String} */
-       this.username = username;
-       /** @type {Number} */
-       this.auctionId = auctionId;
-       /** @type {Number} */
+     * Creates bid creation data.
+     * @param {String} username The username of the user making the bid.
+     * @param {Number} auctionId The ID of the auction the bid is being made on.
+     * @param {Number} value The value of the bid.
+     */
+    constructor(username, auctionId, value) {
+        /** @type {String} */
+        this.username = username;
+        /** @type {Number} */
+        this.auctionId = auctionId;
+        /** @type {Number} */
         this.value = value;
     }
 }

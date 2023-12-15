@@ -7,10 +7,10 @@
         <link rel="shortcut icon" href="/res/logo.ico" type="image/x-icon"/>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
-        <script src="/js/home.js"></script>
+        <script src="/js/user.js"></script>
         <script src="/js/utility.js"></script>
         <link rel="stylesheet" href="css/style.css">
-        <title>Home aste</title>
+        <title>Utente</title>
     </head>
     <header>
         <nav class="navbar navbar-expand-md navbar-dark bg-dark">
@@ -37,49 +37,59 @@
     <main id="dinamicMain" class="container mt-5">
         <div id="title" class="row justify-content-between">
             <div class="col">
-                <h1>Elenco Aste</h1>
+                <h1>Utente</h1>
             </div>
-            <div class="col-auto align-self-center">
-                <button class="btn btn-primary" id="openModalButton">Aggiungi Asta</button>
-            </div>
+            <div id="alert" class="my-2" role="alert"></div>
         </div>
-        <div id="alert" class="my-2" role="alert"></div>
-        <section id="cont_aste">
+        <section class="card my-3 px-3 py-2">
+            <h2>Aste create da me</h2>
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Oggetto</th>
+                                        <th scope="col">Descrizione</th>
+                                        <th scope="col">Data apertura</th>
+                                        <th scope="col">Data chiusura</th>
+                                        <th scope="col">Prezzo di partenza</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="my_ast">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="card my-2 px-3 py-2" >
+            <h2>Aste a cui ho partecipato</h2>
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Oggetto</th>
+                                        <th scope="col">Descrizione</th>
+                                        <th scope="col">Data apertura</th>
+                                        <th scope="col">Prezzo di partenza</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="other_ast">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
-    <!-- Modal -->
-    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-            <h2 class="modal-title" id="exampleModalLabel">Nuova Asta</h2>
-            <button id="clsModal" type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-            </div>
-            <div class="modal-body">
-            <!-- Form -->
-            <form id="form_ast">
-                <div class="form-group">
-                    <label for="nameObject">Nome dell'oggetto:</label>
-                    <input type="text" class="form-control" id="objName" name="objName" required>
-                </div>
-                <div class="form-group">
-                    <label for="description">Descrizione:</label>
-                    <textarea class="form-control" id="objDescription" rows="3" name="objDescription" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="initilaPrice">Prezzo iniziale dell'asta:</label>
-                    <input type="number" class="form-control" id="startingPrice" name="startingPrice" required>
-                </div>
-                <div class="text-end">
-                    <button id="aggAsta" type="submit" class="btn btn-primary my-2">Aggiungi</button>
-                </div>
-            </form>
-            </div>
-        </div>
-        </div>
-    </div>    
+       
     <footer class="bg-dark text-center text-white">
         <div class="container p-4 pb-0">
             <div class="mb-4">

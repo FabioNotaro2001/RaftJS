@@ -4,19 +4,27 @@ import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser';
 import { Socket as SocketCl, io } from "socket.io-client"
 import { CommandType } from '../server_node/enums/CommandType.js';
-import { CloseAuctionRequest, NewAuctionRequest, NewUserRequest, NewBidRequest, LoginRequest, UserExistsRequest, GetLastBidsRequest, GetAuctionInfoRequest } from '../server_node/components/ClientRequestTypes.js';
-import { GetAllOpenAuctionsResponse, GetAuctionInfoResponse, GetLastBidsResponse } from '../server_node/components/ServerResponseTypes.js';
+import {
+    CloseAuctionRequest, NewAuctionRequest, NewUserRequest, NewBidRequest,
+    LoginRequest, UserExistsRequest, GetLastBidsRequest, GetAuctionInfoRequest
+} from '../server_node/components/ClientRequestTypes.js';
+import {
+    GetAllOpenAuctionsResponse, GetAuctionInfoResponse, GetLastBidsResponse
+} from '../server_node/components/ServerResponseTypes.js';
 import { StatusResults } from '../server_node/components/DBManager.js';
 import fs from 'fs';
 
-/** @type {{
+/** 
+ * Configuration object containing server port and node details.
+ * @type {{
  *      serverPort: String, 
  *      nodes: {
  *          host: String,
  *          id: String,
  *          port: Number
  *      }[]
- * }} */
+ * }}
+ */
 const config = JSON.parse(fs.readFileSync("./src/server_web/cluster-config.json", "utf8"));
 
 const app = express();
@@ -29,7 +37,7 @@ const port = config.serverPort;
 const ports = new Map();
 
 config.nodes.forEach(node => {
-    ports.set(node.id, {host: node.host, port: node.port});
+    ports.set(node.id, { host: node.host, port: node.port });
 });
 
 let nodeIds = [...ports.keys()];
@@ -38,15 +46,18 @@ let nodeIds = [...ports.keys()];
 let sock = null;
 
 /**
- * 
+ * Generates a host string for a given nodeId.
  * @param {String} nodeId 
- * @returns 
+ * @returns {String} Host string
  */
-function getHostString(nodeId){
+function getHostString(nodeId) {
     let host = ports.get(nodeId); // Picks a random node to connect to.
     return host.host + ":" + host.port;
 }
 
+/**
+ * Connects to the Raft cluster and identifies the leader node.
+ */
 async function connectToRaftCluster() {
     let nodeId = nodeIds[Math.round(Math.random() * (nodeIds.length - 1))];
     let hostString = getHostString(nodeId);
@@ -99,7 +110,7 @@ async function connectToRaftCluster() {
         });
 
         sock.on("disconnect", (reason) => {
-            if(reason !== "io client disconnect"){
+            if (reason !== "io client disconnect") {
                 console.log("Disconnected!");
                 connectToRaftCluster();
             }
@@ -112,15 +123,16 @@ async function connectToRaftCluster() {
 
 connectToRaftCluster();
 
+// Set up middleware and static file serving
 app.use(cookieParser());
 app.use(bodyParser.json());
-
 
 const __dirname = path.resolve(path.normalize("./src/client_web"));
 app.use("/css/", express.static(path.join(__dirname, "css")));
 app.use("/js/", express.static(path.join(__dirname, "js")));
 app.use("/res/", express.static(path.join(__dirname, "res")));
 
+// Handle POST request for creating a new user
 app.post("/createuser", async (req, res) => {
     let resolvePromise;
     let promise = new Promise((resolve) => {
@@ -145,6 +157,7 @@ app.post("/createuser", async (req, res) => {
     }
 });
 
+// Handle POST request for user login
 app.post("/loginuser", async (req, res) => {
     let resolvePromise;
     let promise = new Promise((resolve) => {
@@ -171,6 +184,7 @@ app.post("/loginuser", async (req, res) => {
     }
 });
 
+// Handle POST request for user logout
 app.post("/logoutuser", (req, res) => {
     // Checks whether the "user" cookie is present in the request.
     if (req.cookies && req.cookies.user) {
@@ -182,6 +196,7 @@ app.post("/logoutuser", (req, res) => {
     }
 });
 
+// Handle POST request for adding a new auction
 app.post("/addAuction", async (req, res) => {
     let resolvePromise;
     let promise = new Promise((resolve) => {
@@ -207,6 +222,7 @@ app.post("/addAuction", async (req, res) => {
     }
 });
 
+// Handle POST request for retrieving all open auctions
 app.post("/getAllAuctions", async (req, res) => {
     let resolvePromise;
     let promise = new Promise((resolve) => {
@@ -231,7 +247,7 @@ app.post("/getAllAuctions", async (req, res) => {
     }
 });
 
-
+// Handle POST request for retrieving auction information
 app.post("/getAuction", async (req, res) => {
     let resolvePromise;
     let promise = new Promise((resolve) => {
@@ -256,6 +272,7 @@ app.post("/getAuction", async (req, res) => {
     }
 });
 
+// Handle POST request for adding a bid to an auction
 app.post("/addOffer", async (req, res) => {
     let resolvePromise;
     let promise = new Promise((resolve) => {
@@ -275,7 +292,7 @@ app.post("/addOffer", async (req, res) => {
 
     await promise;
     if (ret != null) {
-        if(ret.success){
+        if (ret.success) {
             res.status(201);
         } else {
             res.status(400);
@@ -286,6 +303,7 @@ app.post("/addOffer", async (req, res) => {
     }
 });
 
+// Handle POST request for retrieving latest bids in an auction
 app.post("/getBids", async (req, res) => {
     let resolvePromise;
     let promise = new Promise((resolve) => {
@@ -301,19 +319,18 @@ app.post("/getBids", async (req, res) => {
             resolvePromise();
         });
 
-        
     await promise;
     console.log(ret);
 
     if (ret != null && ret.length != null) {
         res.status(200).send(ret);
-
     } else {
         res.status(500);
     }
 });
 
-app.post("/closeAuction", async (req, res) =>{
+// Handle POST request for closing an auction
+app.post("/closeAuction", async (req, res) => {
     let resolvePromise;
     let promise = new Promise((resolve) => {
         resolvePromise = resolve;
@@ -332,7 +349,7 @@ app.post("/closeAuction", async (req, res) =>{
 
     await promise;
     if (ret != null) {
-        if(ret.success){
+        if (ret.success) {
             res.status(200);
         } else {
             res.status(400);
@@ -342,6 +359,7 @@ app.post("/closeAuction", async (req, res) =>{
         res.sendStatus(500);
     }
 });
+
 app.post("/getNewBids", async (req, res) => {
     let resolvePromise;
     let promise = new Promise((resolve) => {
@@ -351,6 +369,7 @@ app.post("/getNewBids", async (req, res) => {
     /** @type {StatusResults} */
     let ret = null;
 
+    // Emitting the NEW_BID command to the Raft cluster
     sock.emit(CommandType.GET_NEW_BIDS, new GetLastBidsRequest(req.body.auctionId, 10),
         async (/** @type {StatusResults} */ response) => {
             ret = response;
@@ -361,7 +380,8 @@ app.post("/getNewBids", async (req, res) => {
 
     await promise;
     if (ret != null) {
-        if(ret.success){
+        // Handling the response and sending appropriate status
+        if (ret.success) {
             res.status(201);
         } else {
             res.status(400);
@@ -382,39 +402,39 @@ app.get('/', async (req, res) => {
 
 // Middleware to check the validity of the cookie.
 const checkCookieValidity = async (req, res, next) => {
-    if(req.cookies.user==null){
+    if (req.cookies.user == null) {
         // No cookie.
         res.redirect("/login");
         return;
-    } 
+    }
 
-    if(await userExists(req.cookies.user)){
+    if (await userExists(req.cookies.user)) {
         next();
         return;
     }
     res.redirect("/login");
 };
 
-async function userExists(user){
+// Handling the userExists function
+async function userExists(user) {
     let result;
     let resolvePromise;
     let promise = new Promise((resolve) => {
         resolvePromise = resolve;
-    }); 
+    });
 
     sock.emit(CommandType.USER_EXISTS, new UserExistsRequest(user),
         async (/** @type {Boolean} */ response) => {
             result = response;
             resolvePromise();
-    });
+        });
 
     await promise;
     return result ?? false;
 }
 
-
 // Using middleware for all routes that require cookie verification.
-app.use(['/home', '/auction'], checkCookieValidity);
+app.use(['/home', '/auction', '/user'], checkCookieValidity);
 
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, "html/login.html"));
@@ -430,6 +450,10 @@ app.get('/home', (req, res) => {
 
 app.get('/auction', (req, res) => {
     res.sendFile(path.join(__dirname, "html/auction.html"));
+});
+
+app.get('/user', (req, res) => {
+    res.sendFile(path.join(__dirname, "html/user.html"));
 });
 
 app.listen(port, () => {

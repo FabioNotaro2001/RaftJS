@@ -18,7 +18,6 @@ export class RPCManager {
         this.currentId = nodeId;
     }
 
-
     /**
      * Send a specified RPC and its parameters to a specified destination server.
      * @param {SocketCl} receiver Destination server. 

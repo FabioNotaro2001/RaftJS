@@ -49,9 +49,10 @@ function loadUserAuctions(user){
             `;
 
             let btnVisitAuction = document.createElement("a");
+            btnVisitAuction.innerText = "Vai";
             btnVisitAuction.classList.add("btn", "btn-primary");
             btnVisitAuction.href = "/auction?id=" + auction.auctionId;
-
+            
             let tdElem = document.createElement("td");
             tdElem.append(btnVisitAuction);
             trElem.append(tdElem);
@@ -62,7 +63,7 @@ function loadUserAuctions(user){
     .fail(function (response) {
         console.log(response);
     });
-
+    
 }
 
 function loadParticipations(user){    

@@ -35,15 +35,11 @@ $(document).ready(function () {
             contentType: "application/json"
         })
         .done(function (data, success, response) {
-            console.log(success);
-            if(success!=="success"){
-                addAlert("alert","alert-success","Asta chiusa con successo!","");
-            } else {
-                addAlert("alert","alert-danger","Errore! Chiusura asta chiusa non riuscita!","");
-            }
+            addAlert("alert","alert-success","Asta chiusa con successo!","");
         })
         .fail(function (response) {
             console.log(response);
+            addAlert("alert","alert-danger","Errore! Chiusura non riuscita!","");
         });
     });
     

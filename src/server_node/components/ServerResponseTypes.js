@@ -87,8 +87,9 @@ export class GetUserAuctionsResponse {
      * @param {String} openingDate Date when the auction opens.
      * @param {?String} closingDate Date when the auction closes, if available.
      * @param {Number} startingPrice Starting price of the auction.
+     * @param {?Number} highestBidValue Highest bid in the auction.
      */
-    constructor(auctionId, objName, objDescription, openingDate, closingDate, startingPrice) {
+    constructor(auctionId, objName, objDescription, openingDate, closingDate, startingPrice, highestBidValue) {
         /** @type {Number} */
         this.auctionId = auctionId;
         /** @type {String} */
@@ -101,6 +102,8 @@ export class GetUserAuctionsResponse {
         this.closingDate = closingDate ? new Date(closingDate) : null;
         /** @type {Number} */
         this.startingPrice = startingPrice;
+        /** @type {?Number} */
+        this.highestBidValue = highestBidValue;
     }
 }
 
@@ -114,8 +117,9 @@ export class GetUserParticipationsResponse {
      * @param {?String} objDescription Description of the auctioned object.
      * @param {String} openingDate Date when the auction opens.
      * @param {Number} startingPrice Starting price of the auction.
+     * @param {?Number} highestBidValue Highest bid in the auction.
      */
-    constructor(auctionId, objName, objDescription, openingDate, startingPrice) {
+    constructor(auctionId, objName, objDescription, openingDate, startingPrice, highestBidValue) {
        /** @type {Number} */
        this.auctionId = auctionId;
        /** @type {?String} */
@@ -126,6 +130,8 @@ export class GetUserParticipationsResponse {
        this.openingDate = new Date(openingDate);
        /** @type {Number} */
        this.startingPrice = startingPrice;
+       /** @type {?Number} */
+       this.highestBidValue = highestBidValue;
     }
 }
 

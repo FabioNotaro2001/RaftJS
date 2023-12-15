@@ -5,12 +5,10 @@ $(document).ready(function () {
     printInfoObj();
     loadBids();
     $("#logout").on("click", function() {
-        const datas = new getFormData();
-        const jsonData = JSON.stringify(datas);
         $.ajax({
             type: "POST",
             url: "/logoutuser",
-            data: jsonData,
+            data: {},
             processData: false,
             contentType: "application/json"
         })
@@ -137,6 +135,7 @@ function printInfoObj(){
                         <div class="col-md-12">
                             <p class="card-text">${informazioni.objDesc}</p>
                         </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -168,7 +167,7 @@ function loadBids(){
             html+=`
             <tr class="${first ? "table-secondary " : ""}offer">
                 <td>${off.userMaker}</td>
-                <td>${new Date(off.bidDate).toDateString()}</td>
+                <td>${new Date(off.bidDate).toLocaleString()}</td>
                 <td class="offerPrice">${off.bidValue}</td>
             </tr>
             `;

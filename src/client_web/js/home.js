@@ -2,12 +2,10 @@ $(document).ready(function () {
     fetchOpenAuctions();
 
     $("#logout").on("click", function () {
-        const datas = new getFormData();
-        const jsonData = JSON.stringify(datas);
         $.ajax({
             type: "POST",
             url: "/logoutuser",
-            data: jsonData,
+            data: {},
             processData: false,
             contentType: "application/json"
         })

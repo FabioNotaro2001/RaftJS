@@ -6,10 +6,10 @@ import { Socket as SocketCl, io } from "socket.io-client"
 import { CommandType } from '../server_node/enums/CommandType.js';
 import {
     CloseAuctionRequest, NewAuctionRequest, NewUserRequest, NewBidRequest,
-    LoginRequest, UserExistsRequest, GetLastBidsRequest, GetAuctionInfoRequest
+    LoginRequest, UserExistsRequest, GetLastBidsRequest, GetAuctionInfoRequest, GetUserAuctionsRequest, GetUserParticipationsRequest
 } from '../server_node/components/ClientRequestTypes.js';
 import {
-    GetAllOpenAuctionsResponse, GetAuctionInfoResponse, GetLastBidsResponse
+    GetAllOpenAuctionsResponse, GetAuctionInfoResponse, GetLastBidsResponse, GetUserAuctionsResponse, GetUserParticipationsResponse
 } from '../server_node/components/ServerResponseTypes.js';
 import { StatusResults } from '../server_node/components/DBManager.js';
 import fs from 'fs';
@@ -263,6 +263,54 @@ app.post("/getAuction", async (req, res) => {
     });
 
     console.log(req);
+
+    await promise;
+    if (ret != null) {
+        res.status(200).send(ret);
+    } else {
+        res.sendStatus(500);
+    }
+});
+
+app.post("/getUserAuctions", async (req, res) => {
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    /** @type {GetUserAuctionsResponse[]} */
+    let ret = null;
+
+    sock.emit(CommandType.GET_USER_AUCTIONS, new GetUserAuctionsRequest(req.body.user), async (/** @type {?GetUserAuctionsResponse[]} */ response) => {
+        ret = response;
+        resolvePromise();
+    });
+
+    console.log(req);   // TODO: commentare o togliere in tutti
+
+    await promise;
+    if (ret != null) {
+        res.status(200).send(ret);
+    } else {
+        res.sendStatus(500);
+    }
+});
+
+app.post("/getUserParticipations", async (req, res) => {
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    /** @type {GetUserParticipationsResponse[]} */
+    let ret = null;
+
+    sock.emit(CommandType.GET_USER_AUCTIONS, new GetUserParticipationsRequest(req.body.user), async (/** @type {?GetUserAuctionsResponse[]} */ response) => {
+        ret = response;
+        resolvePromise();
+    });
+
+    console.log(req);   // TODO: commentare o togliere in tutti
 
     await promise;
     if (ret != null) {

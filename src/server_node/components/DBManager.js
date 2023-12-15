@@ -316,7 +316,10 @@ export class DBManager {
     async queryViewAllAuctionsOfAUser(username) {
         try {
             const [rows, fields] = await this.connection.execute(
-                'SELECT Id AS id, ObjectName AS objName, ObjectDescription AS objDesc, OpeningDate AS opDate, ClosingDate AS clDate, StartingPrice AS sp FROM Auctions WHERE UserMaker = ?',
+                `SELECT Id AS id, ObjectName AS objName, ObjectDescription AS objDesc, OpeningDate AS opDate, ClosingDate AS clDate, StartingPrice AS sp, b.Value AS hv 
+                FROM Auctions AS a LEFT JOIN Bids AS b
+                    ON a.WinnerBid = b.Id
+                WHERE UserMaker = ?`,
                 [username]
             );
 
@@ -324,7 +327,7 @@ export class DBManager {
             let results = [];
 
             rows.forEach(row => {
-                results.push(new GetUserAuctionsResponse(row.id, row.objName, row.objDesc, row.opDate, row.clDate, row.sp));
+                results.push(new GetUserAuctionsResponse(row.id, row.objName, row.objDesc, row.opDate, row.clDate, row.sp, row.hv));
             });
 
             return results;
@@ -341,9 +344,11 @@ export class DBManager {
     async queryViewAllAuctionsParticipatedByUser(username) {
         try {
             const [rows, fields] = await this.connection.execute(
-                `SELECT a.Id AS id, a.ObjectName AS objName, a.ObjectDescription AS objDesc, a.OpeningDate AS date, a.StartingPrice as sp
-                FROM Auctions AS a INNER JOIN Bids AS b
-                    ON b.AuctionId = a.Id AND b.UserMaker = ?
+                `SELECT a.Id AS id, a.ObjectName AS objName, a.ObjectDescription AS objDesc, a.OpeningDate AS date, a.StartingPrice as sp, b.Value AS hv 
+                FROM Auctions AS a LEFT JOIN Bids AS b
+                    ON a.WinnerBid = b.Id
+                INNER JOIN Bids AS b1
+                    ON b.AuctionId = a.Id AND b1.UserMaker = ?
                 GROUP BY a.Id`,
                 [username]
             );
@@ -352,7 +357,7 @@ export class DBManager {
             let results = [];
 
             rows.forEach(row => {
-                results.push(new GetUserParticipationsResponse(row.id, row.objName, row.objDesc, row.date, row.sp));
+                results.push(new GetUserParticipationsResponse(row.id, row.objName, row.objDesc, row.date, row.sp, row.hv));
             });
 
             return results;

@@ -1,15 +1,14 @@
 $(document).ready(function () {
-    let url = new URL(window.location.href);
-    let id = url.searchParams.get('id');
-    // printInfoObj();
-    // loadBids();
+    let userCookie = document.cookie.split("user=")[1];
+
+    loadUserAuctions(userCookie);
+    loadParticipations(userCookie);
+
     $("#logout").on("click", function() {
-        const datas = new getFormData();
-        const jsonData = JSON.stringify(datas);
         $.ajax({
             type: "POST",
             url: "/logoutuser",
-            data: jsonData,
+            data: {},
             processData: false,
             contentType: "application/json"
         })
@@ -27,51 +26,29 @@ $(document).ready(function () {
     });
 });
 
-function printInfoObj(){
-    let url = new URL(window.location.href);
-    let id = url.searchParams.get('id');
-    let jsonData = JSON.stringify({ auctionId: id });
-
+function loadUserAuctions(user){
     $.ajax({
         type: "POST",
-        url: "/getAuction",
-        data: jsonData,
+        url: "/getUserAuctions",
+        data: JSON.stringify({user: user}),
         processData: false,
         contentType: "application/json"
     })
     .done(function (data, success, response) {
-        let informazioni = data;
-
-        let userCookie = document.cookie.split("user=")[1];
-
-        if(informazioni.creator == userCookie){
-            $("#closeAuction").removeClass("btn-hidden");
-        } else{
-            $("#openModalButton").removeClass("btn-hidden");
-        }
-
         let html = '';
-        html+=`
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h3 class="card-title h3">Oggetto: ${informazioni.objName}</h3>
-                        <p class="card-title h4">Creatore: ${informazioni.creator}</p>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <p class="h3">Offerta corrente: ${informazioni.highestBid ?? informazioni.startingPrice}€</p>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <p class="card-text">${informazioni.objDesc}</p>
-                        </div>
-                </div>
-            </div>
-        </div>
-        `;
-        $("#ogg_vinc").html(html);
+
+        for (const auction of data) {
+            html+=`
+            <tr>
+                <td scope="col">${auction.objName}</th>
+                <td scope="col">${auction.openingDate.toLocaleString()}</th>
+                <td scope="col">${auction.closingDate ? auction.closingDate.toLocaleString() : "Asta aperta"}</th>
+                <td scope="col">${auction.startingPrice}</th>
+                <td scope="col">${auction.highestBidValue ?? ""}</th>
+            </tr>
+            `;
+        }
+        $("#my_ast").html(html);
     })
     .fail(function (response) {
         console.log(response);
@@ -79,32 +56,29 @@ function printInfoObj(){
 
 }
 
-function loadBids(){
-    let url = new URL(window.location.href);
-    let id = url.searchParams.get('id');
-    let jsonData = JSON.stringify({ auctionId: id });
-    
+function loadParticipations(user){    
     $.ajax({
         type: "POST",
-        url: "/getBids",
-        data: jsonData,
+        url: "/getUserParticipations",
+        data: JSON.stringify({user: user}),
         processData: false,
         contentType: "application/json"
     })
     .done(function (data, success, response) {
         let html = '';
-        let first = true;
-        for(off of data){
+
+        for (const auction of data) {
             html+=`
-            <tr class="${first ? "table-secondary " : ""}offer">
-                <td>${off.userMaker}</td>
-                <td>${new Date(off.bidDate).toDateString()}</td>
-                <td class="offerPrice">${off.bidValue}</td>
+            <tr>
+                <td scope="col">${auction.objName}</th>
+                <td scope="col">${auction.openingDate.toLocaleString()}</th>
+                <td scope="col">${auction.closingDate ? auction.closingDate.toLocaleString() : "Asta aperta"}</th>
+                <td scope="col">${auction.startingPrice}</th>
+                <td scope="col">${auction.highestBidValue ?? ""}</th>
             </tr>
             `;
-            first = false;
         }
-        $("#cont_aste").html(html);
+        $("#my_part").html(html);
     })
     .fail(function (response) {
         console.log(response);

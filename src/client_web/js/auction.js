@@ -28,7 +28,7 @@ $(document).ready(function () {
     });
 
     $("#closeAuction").on("click", function() {
-        $("#myButton").attr("disabled", true);
+        $("#closeAuction").attr("disabled", true);
         const jsonData = JSON.stringify({auctionId: id});
         $.ajax({
             type: "POST",
@@ -44,7 +44,7 @@ $(document).ready(function () {
         .fail(function (response) {
             console.log(response);
             addAlert("alert","alert-danger","Errore! Chiusura non riuscita!","");
-            $("#myButton").attr("disabled", false);
+            $("#closeAuction").attr("disabled", false);
         });
     });
     

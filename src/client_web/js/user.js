@@ -35,6 +35,8 @@ function loadUserAuctions(user){
         contentType: "application/json"
     })
     .done(function (data, success, response) {
+        let table = document.getElementById("my_ast");
+
         for (const auction of data) {
             let trElem = document.createElement("tr");
 
@@ -46,20 +48,15 @@ function loadUserAuctions(user){
                 <td scope="col">${auction.highestBidValue ?? ""}</th>
             `);
 
-            let btnVisitAuction = document.createElement("button");
+            let btnVisitAuction = document.createElement("a");
             btnVisitAuction.classList.add("btn", "btn-primary");
-            btnVisitAuction.addEventListener("click", () => {
-                $.ajax({
-                    type: "GET",
-                    url: "/auction?id=" + auction.auctionId,
-                });
-            });
+            btnVisitAuction.href = "/auction?id" + auction.auctionId;
 
             let tdElem = document.createElement("td");
             tdElem.append(btnVisitAuction);
             trElem.append(tdElem);
 
-            $("#my_ast").append(trElem);
+            table.appendChild(trElem);
         }
     })
     .fail(function (response) {
@@ -77,6 +74,8 @@ function loadParticipations(user){
         contentType: "application/json"
     })
     .done(function (data, success, response) {
+        let table = document.getElementById("my_part");
+        
         for (const auction of data) {
             let trElem = document.createElement("tr");
 
@@ -88,20 +87,15 @@ function loadParticipations(user){
                 <td scope="col">${auction.highestBidValue ?? ""}</th>
             `);
 
-            let btnVisitAuction = document.createElement("button");
+            let btnVisitAuction = document.createElement("a");
             btnVisitAuction.classList.add("btn", "btn-primary");
-            btnVisitAuction.addEventListener("click", () => {
-                $.ajax({
-                    type: "GET",
-                    url: "/auction?id=" + auction.auctionId,
-                });
-            });
+            btnVisitAuction.href = "/auction?id" + auction.auctionId;
 
             let tdElem = document.createElement("td");
             tdElem.append(btnVisitAuction);
             trElem.append(tdElem);
-            
-            $("#my_part").append(trElem);
+
+            table.appendChild(trElem);
         }
     })
     .fail(function (response) {

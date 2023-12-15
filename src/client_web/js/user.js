@@ -35,20 +35,32 @@ function loadUserAuctions(user){
         contentType: "application/json"
     })
     .done(function (data, success, response) {
-        let html = '';
-
         for (const auction of data) {
-            html+=`
-            <tr>
+            let trElem = document.createElement("tr");
+
+            trElem.append(`
                 <td scope="col">${auction.objName}</th>
-                <td scope="col">${auction.openingDate.toLocaleString()}</th>
-                <td scope="col">${auction.closingDate ? auction.closingDate.toLocaleString() : "Asta aperta"}</th>
+                <td scope="col">${new Date(auction.openingDate).toLocaleString()}</th>
+                <td scope="col">${auction.closingDate ? new Date(auction.closingDate).toLocaleString() : "Asta aperta"}</th>
                 <td scope="col">${auction.startingPrice}</th>
                 <td scope="col">${auction.highestBidValue ?? ""}</th>
-            </tr>
-            `;
+            `);
+
+            let btnVisitAuction = document.createElement("button");
+            btnVisitAuction.classList.add("btn", "btn-primary");
+            btnVisitAuction.addEventListener("click", () => {
+                $.ajax({
+                    type: "GET",
+                    url: "/auction?id=" + auction.auctionId,
+                });
+            });
+
+            let tdElem = document.createElement("td");
+            tdElem.append(btnVisitAuction);
+            trElem.append(tdElem);
+
+            $("#my_ast").append(trElem);
         }
-        $("#my_ast").html(html);
     })
     .fail(function (response) {
         console.log(response);
@@ -65,20 +77,32 @@ function loadParticipations(user){
         contentType: "application/json"
     })
     .done(function (data, success, response) {
-        let html = '';
-
         for (const auction of data) {
-            html+=`
-            <tr>
+            let trElem = document.createElement("tr");
+
+            trElem.append(`
                 <td scope="col">${auction.objName}</th>
-                <td scope="col">${auction.openingDate.toLocaleString()}</th>
-                <td scope="col">${auction.closingDate ? auction.closingDate.toLocaleString() : "Asta aperta"}</th>
+                <td scope="col">${new Date(auction.openingDate).toLocaleString()}</th>
+                <td scope="col">${auction.closingDate ? new Date(auction.closingDate).toLocaleString() : "Asta aperta"}</th>
                 <td scope="col">${auction.startingPrice}</th>
                 <td scope="col">${auction.highestBidValue ?? ""}</th>
-            </tr>
-            `;
+            `);
+
+            let btnVisitAuction = document.createElement("button");
+            btnVisitAuction.classList.add("btn", "btn-primary");
+            btnVisitAuction.addEventListener("click", () => {
+                $.ajax({
+                    type: "GET",
+                    url: "/auction?id=" + auction.auctionId,
+                });
+            });
+
+            let tdElem = document.createElement("td");
+            tdElem.append(btnVisitAuction);
+            trElem.append(tdElem);
+            
+            $("#my_part").append(trElem);
         }
-        $("#my_part").html(html);
     })
     .fail(function (response) {
         console.log(response);

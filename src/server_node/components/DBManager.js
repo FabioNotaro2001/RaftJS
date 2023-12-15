@@ -240,7 +240,7 @@ export class DBManager {
     async queryCloseAuction(auctionId, closingDate) {
         try {
             /** @type {mysql.ResultSetHeader} */
-            let results = await this.connection.execute(
+            let [results, _] = await this.connection.execute(
                 'UPDATE Auctions SET ClosingDate = ? WHERE Id = ?',
                 [closingDate, auctionId]
             );

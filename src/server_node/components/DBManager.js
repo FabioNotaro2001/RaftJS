@@ -316,7 +316,7 @@ export class DBManager {
     async queryViewAllAuctionsOfAUser(username) {
         try {
             const [rows, fields] = await this.connection.execute(
-                `SELECT Id AS id, ObjectName AS objName, ObjectDescription AS objDesc, OpeningDate AS opDate, ClosingDate AS clDate, StartingPrice AS sp, b.Value AS hv 
+                `SELECT a.Id AS id, a.ObjectName AS objName, a.ObjectDescription AS objDesc, a.OpeningDate AS opDate, a.ClosingDate AS clDate, a.StartingPrice AS sp, b.Value AS hv 
                 FROM Auctions AS a LEFT JOIN Bids AS b
                     ON a.WinnerBid = b.Id
                 WHERE UserMaker = ?`,

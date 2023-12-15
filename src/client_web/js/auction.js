@@ -28,6 +28,7 @@ $(document).ready(function () {
     });
 
     $("#closeAuction").on("click", function() {
+        $("#myButton").attr("disabled", true);
         const jsonData = JSON.stringify({auctionId: id});
         $.ajax({
             type: "POST",
@@ -38,10 +39,12 @@ $(document).ready(function () {
         })
         .done(function (data, success, response) {
             addAlert("alert","alert-success","Asta chiusa con successo!","");
+            $("#closeAuction").addClass("btn-hidden");
         })
         .fail(function (response) {
             console.log(response);
             addAlert("alert","alert-danger","Errore! Chiusura non riuscita!","");
+            $("#myButton").attr("disabled", false);
         });
     });
     

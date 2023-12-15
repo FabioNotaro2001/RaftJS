@@ -20,7 +20,7 @@ for(let i = 0; i < nNodes; i++){
     nodes.push(new RaftNode(ids[i], ports.get(ids[i]).port1, ports.get(ids[i]).port2, 
                 2000, 3000, 3000, 5000, 1000, 1000, 
                 "192.168.1.127", "root", "password", "portale",
-                tempMap, true, false));
+                tempMap, false, false));
 }
 
 nodes.forEach((e) => e.start());

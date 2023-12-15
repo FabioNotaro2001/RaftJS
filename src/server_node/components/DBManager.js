@@ -332,6 +332,7 @@ export class DBManager {
 
             return results;
         } catch (err) {
+            console.log(err);
             return null;
         }
     }
@@ -362,6 +363,7 @@ export class DBManager {
 
             return results;
         } catch (err) {
+            console.log(err);
             return null;
         }
     }

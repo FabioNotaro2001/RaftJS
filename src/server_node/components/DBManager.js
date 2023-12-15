@@ -241,7 +241,7 @@ export class DBManager {
         try {
             /** @type {mysql.ResultSetHeader} */
             let [results, _] = await this.connection.execute(
-                'UPDATE Auctions SET ClosingDate = ? WHERE ClosingDate IS NOT NULL AND Id = ?',
+                'UPDATE Auctions SET ClosingDate = ? WHERE ClosingDate IS NULL AND Id = ?',
                 [closingDate, auctionId]
             );
 

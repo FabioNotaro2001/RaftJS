@@ -174,7 +174,7 @@ export class DBManager {
 
         if (rows.length > 0) {
             let auct = rows[0];
-            return new GetAuctionInfoResponse(auct.um, auct.obn, auct.obd, auct.sp, auct.cd, auct.hv);
+            return new GetAuctionInfoResponse(auct.um, auct.obn, auct.obd, auct.sp, auct.cd != null, auct.hv);
         }
         return null;
     }
@@ -241,7 +241,7 @@ export class DBManager {
         try {
             /** @type {mysql.ResultSetHeader} */
             let [results, _] = await this.connection.execute(
-                'UPDATE Auctions SET ClosingDate = ? WHERE Id = ?',
+                'UPDATE Auctions SET ClosingDate = ? WHERE ClosingDate IS NOT NULL AND Id = ?',
                 [closingDate, auctionId]
             );
 

@@ -2,8 +2,10 @@
 $(document).ready(function () {
     let url = new URL(window.location.href);
     let id = url.searchParams.get('id');
+
     printInfoObj();
     loadBids();
+    
     $("#logout").on("click", function() {
         $.ajax({
             type: "POST",
@@ -104,14 +106,14 @@ function printInfoObj(){
         contentType: "application/json"
     })
     .done(function (data, success, response) {
-        let informazioni = data;
-
         let userCookie = document.cookie.split("user=")[1];
 
-        if(informazioni.creator == userCookie){
-            $("#closeAuction").removeClass("btn-hidden");
-        } else{
-            $("#openModalButton").removeClass("btn-hidden");
+        if (!data.closed) {
+            if(data.creator == userCookie){
+                $("#closeAuction").removeClass("btn-hidden");
+            } else{
+                $("#openModalButton").removeClass("btn-hidden");
+            }
         }
 
         let html = '';
@@ -120,16 +122,16 @@ function printInfoObj(){
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <h3 class="card-title h3">Oggetto: ${informazioni.objName}</h3>
-                        <p class="card-title h4">Creatore: ${informazioni.creator}</p>
+                        <h3 class="card-title h3">Oggetto: ${data.objName}</h3>
+                        <p class="card-title h4">Creatore: ${data.creator}</p>
                         </div>
                         <div class="col-md-6 text-end">
-                            <p class="h3">Offerta corrente: ${informazioni.highestBid ?? informazioni.startingPrice}€</p>
+                            <p class="h3">Offerta corrente: ${data.highestBid ?? data.startingPrice}€</p>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-12">
-                            <p class="card-text">${informazioni.objDesc}</p>
+                            <p class="card-text">${data.objDesc}</p>
                         </div>
                     </div>
                 </div>

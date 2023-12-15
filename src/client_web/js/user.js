@@ -40,17 +40,17 @@ function loadUserAuctions(user){
         for (const auction of data) {
             let trElem = document.createElement("tr");
 
-            trElem.append(`
+            trElem.innerHTML = `
                 <td scope="col">${auction.objName}</th>
                 <td scope="col">${new Date(auction.openingDate).toLocaleString()}</th>
                 <td scope="col">${auction.closingDate ? new Date(auction.closingDate).toLocaleString() : "Asta aperta"}</th>
                 <td scope="col">${auction.startingPrice}</th>
                 <td scope="col">${auction.highestBidValue ?? ""}</th>
-            `);
+            `;
 
             let btnVisitAuction = document.createElement("a");
             btnVisitAuction.classList.add("btn", "btn-primary");
-            btnVisitAuction.href = "/auction?id" + auction.auctionId;
+            btnVisitAuction.href = "/auction?id=" + auction.auctionId;
 
             let tdElem = document.createElement("td");
             tdElem.append(btnVisitAuction);
@@ -79,17 +79,18 @@ function loadParticipations(user){
         for (const auction of data) {
             let trElem = document.createElement("tr");
 
-            trElem.append(`
+            trElem.innerHTML = `
                 <td scope="col">${auction.objName}</th>
                 <td scope="col">${new Date(auction.openingDate).toLocaleString()}</th>
                 <td scope="col">${auction.closingDate ? new Date(auction.closingDate).toLocaleString() : "Asta aperta"}</th>
                 <td scope="col">${auction.startingPrice}</th>
                 <td scope="col">${auction.highestBidValue ?? ""}</th>
-            `);
+            `;
 
             let btnVisitAuction = document.createElement("a");
+            btnVisitAuction.innerText = "Vai";
             btnVisitAuction.classList.add("btn", "btn-primary");
-            btnVisitAuction.href = "/auction?id" + auction.auctionId;
+            btnVisitAuction.href = "/auction?id=" + auction.auctionId;
 
             let tdElem = document.createElement("td");
             tdElem.append(btnVisitAuction);

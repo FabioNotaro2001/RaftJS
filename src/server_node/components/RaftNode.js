@@ -197,11 +197,11 @@ export class RaftNode {
         this.debugLog("Web server listening on port " + this.webServerManager.webServerPort);
 
         // Connect to other nodes.
-        this.otherNodes.forEach((id, host) => {
+        this.otherNodes.forEach((host, id) => {
             this.debugLog("Connecting to " + host);
 
 
-            let sock = io("ws://" + id, {
+            let sock = io("ws://" + host, {
                 autoConnect: false,
                 reconnection: true,
                 reconnectionAttempts: 5,
@@ -709,7 +709,7 @@ export class RaftNode {
         if (nodeId != null) { // Sends an heartbeat to a specified node.
             thisNode.heartbeatTimeouts.set(nodeId, setTimeout(() => sendHeartbeat(nodeId), thisNode.heartbeatTimeout));
         } else { // Sends an heartbeat to all other nodes.
-            thisNode.otherNodes.forEach((nodeId, _) => {
+            thisNode.otherNodes.forEach(( _, nodeId) => {
                 thisNode.heartbeatTimeouts.set(nodeId, setTimeout(() => sendHeartbeat(nodeId), thisNode.heartbeatTimeout));
             });
         }

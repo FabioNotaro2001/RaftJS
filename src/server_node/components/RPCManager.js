@@ -10,10 +10,10 @@ export class RPCManager {
 
     /**
      * Creates an instance of the class.
-     * @param {Map<String, SocketCl>[]} sockets Map from IDs to sockets.
+     * @param {Array<Map<String, SocketCl>>} sockets Map from IDs to sockets.
      * @param {String} nodeId Id of the node linked to this manager instance.
      */
-    constructor(sockets, nodeId){
+    constructor(sockets, nodeId) {
         this.sockets = sockets;
         this.currentId = nodeId;
     }

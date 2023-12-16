@@ -1,0 +1,2103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>RPCManager - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    <input type="text" id="nav-search" placeholder="Search" />
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="AppendEntriesParameters.html">AppendEntriesParameters</a><ul class='methods'><li data-type='method'><a href="AppendEntriesParameters.html#.forRequest">forRequest</a></li><li data-type='method'><a href="AppendEntriesParameters.html#.forResponse">forResponse</a></li></ul></li><li><a href="AuctionCloseData.html">AuctionCloseData</a></li><li><a href="AuctionCreateData.html">AuctionCreateData</a></li><li><a href="BidCreateData.html">BidCreateData</a></li><li><a href="CloseAuctionRequest_CloseAuctionRequest.html">CloseAuctionRequest</a></li><li><a href="DBManager_DBManager.html">DBManager</a></li><li><a href="GetAllOpenAuctionsResponse.html">GetAllOpenAuctionsResponse</a></li><li><a href="GetAuctionInfoRequest_GetAuctionInfoRequest.html">GetAuctionInfoRequest</a></li><li><a href="GetAuctionInfoResponse.html">GetAuctionInfoResponse</a></li><li><a href="GetLastBidsRequest_GetLastBidsRequest.html">GetLastBidsRequest</a></li><li><a href="GetLastBidsResponse.html">GetLastBidsResponse</a></li><li><a href="GetNewBidsRequest_GetNewBidsRequest.html">GetNewBidsRequest</a></li><li><a href="GetNewBidsResponse.html">GetNewBidsResponse</a></li><li><a href="GetUserAuctionsRequest_GetUserAuctionsRequest.html">GetUserAuctionsRequest</a></li><li><a href="GetUserAuctionsResponse.html">GetUserAuctionsResponse</a></li><li><a href="GetUserParticipationsRequest_GetUserParticipationsRequest.html">GetUserParticipationsRequest</a></li><li><a href="GetUserParticipationsResponse.html">GetUserParticipationsResponse</a></li><li><a href="LogRecord.html">LogRecord</a></li><li><a href="LoginRequest_LoginRequest.html">LoginRequest</a></li><li><a href="NewAuctionRequest_NewAuctionRequest.html">NewAuctionRequest</a></li><li><a href="NewBidRequest_NewBidRequest.html">NewBidRequest</a></li><li><a href="NewUserRequest_NewUserRequest.html">NewUserRequest</a></li><li><a href="RPCManager.html">RPCManager</a><ul class='methods'><li data-type='method'><a href="RPCManager.html#sendAll">sendAll</a></li><li data-type='method'><a href="RPCManager.html#sendElectionNotice">sendElectionNotice</a></li><li data-type='method'><a href="RPCManager.html#sendElectionNoticeTo">sendElectionNoticeTo</a></li><li data-type='method'><a href="RPCManager.html#sendReplication">sendReplication</a></li><li data-type='method'><a href="RPCManager.html#sendReplicationResponse">sendReplicationResponse</a></li><li data-type='method'><a href="RPCManager.html#sendReplicationTo">sendReplicationTo</a></li><li data-type='method'><a href="RPCManager.html#sendSnapshotMessage">sendSnapshotMessage</a></li><li data-type='method'><a href="RPCManager.html#sendSnapshotResponse">sendSnapshotResponse</a></li><li data-type='method'><a href="RPCManager.html#sendTo">sendTo</a></li><li data-type='method'><a href="RPCManager.html#sendVote">sendVote</a></li></ul></li><li><a href="RPCParameters.html">RPCParameters</a></li><li><a href="RaftNode_RaftNode.html">RaftNode</a></li><li><a href="RequestVoteParameters.html">RequestVoteParameters</a><ul class='methods'><li data-type='method'><a href="RequestVoteParameters.html#.forRequest">forRequest</a></li><li data-type='method'><a href="RequestVoteParameters.html#.forResponse">forResponse</a></li></ul></li><li><a href="SnapshotParameters.html">SnapshotParameters</a><ul class='methods'><li data-type='method'><a href="SnapshotParameters.html#.forRequest">forRequest</a></li><li data-type='method'><a href="SnapshotParameters.html#.forResponse">forResponse</a></li></ul></li><li><a href="StatusResults_StatusResults.html">StatusResults</a></li><li><a href="UserCreateData.html">UserCreateData</a></li><li><a href="UserExistsRequest_UserExistsRequest.html">UserExistsRequest</a></li><li><a href="WebServerManager.html">WebServerManager</a><ul class='methods'><li data-type='method'><a href="WebServerManager.html#onRequest">onRequest</a></li><li data-type='method'><a href="WebServerManager.html#start">start</a></li><li data-type='method'><a href="WebServerManager.html#stop">stop</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#CommandType">CommandType</a></li><li><a href="global.html#RPCType">RPCType</a></li><li><a href="global.html#State">State</a></li><li><a href="global.html#addAlert">addAlert</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#connectToRaftCluster">connectToRaftCluster</a></li><li><a href="global.html#getFormData">getFormData</a></li><li><a href="global.html#getHostString">getHostString</a></li><li><a href="global.html#otherNodes">otherNodes</a></li><li><a href="global.html#ports">ports</a></li><li><a href="global.html#sock">sock</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">RPCManager</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>
+        
+            RPCManager
+        
+        </h2>
+        
+            <div class="class-description usertext"><p>Class containing the methods for sending RPCs to other nodes.</p></div>
+        
+    
+</header>
+
+<article>
+    
+        <div class="container-overview">
+        
+            
+
+    
+    <h2>Constructor</h2>
+    
+
+    <h4 class="name" id="RPCManager"><span class="type-signature"></span>new RPCManager<span class="signature">(sockets, nodeId)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Creates an instance of the class.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_RPCManager.js.html">server_node/components/RPCManager.js</a>, <a href="server_node_components_RPCManager.js.html#line9">line 9</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>sockets</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;Map.&lt;String, SocketCl>></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Map from IDs to sockets.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>nodeId</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Id of the node linked to this manager instance.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+        </div>
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="RPCManager.html">RPCManager</a></dt>
+            <dd></dd>
+        </dl>
+    
+    
+    
+
+     
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="sendAll"><span class="type-signature"></span>sendAll<span class="signature">(rpcType, rpcParameters)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Send a specified RPC and its parameters to all other destination servers (a sort of broadcast of RPC).</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_RPCManager.js.html">server_node/components/RPCManager.js</a>, <a href="server_node_components_RPCManager.js.html#line36">line 36</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>rpcType</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="global.html#RPCType">RPCType</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Type of RPC to be sent to the list of other servers.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>rpcParameters</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="RPCParameters.html">RPCParameters</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Parameterrs useful for the RPC.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="sendElectionNotice"><span class="type-signature"></span>sendElectionNotice<span class="signature">(term, lastLogIndex, lastLogTerm)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>RPC request made by a candidate for requesting a new leader election.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_RPCManager.js.html">server_node/components/RPCManager.js</a>, <a href="server_node_components_RPCManager.js.html#line84">line 84</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>term</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Candidate’s term.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lastLogIndex</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Index of candidate’s last log entry.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lastLogTerm</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">null</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Term of candidate’s last log entry.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="sendElectionNoticeTo"><span class="type-signature"></span>sendElectionNoticeTo<span class="signature">(receiver, term, lastLogIndex, lastLogTerm)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>RPC request made by a candidate for requesting a new leader election to a single node.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_RPCManager.js.html">server_node/components/RPCManager.js</a>, <a href="server_node_components_RPCManager.js.html#line95">line 95</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>receiver</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">SocketCl</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>term</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Candidate’s term.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lastLogIndex</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Index of candidate’s last log entry.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>lastLogTerm</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">null</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Term of candidate’s last log entry.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="sendReplication"><span class="type-signature"></span>sendReplication<span class="signature">(term, prevLogIndex, prevLogTerm, entries, leaderCommit)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>RPC request for appending entries and log replication.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_RPCManager.js.html">server_node/components/RPCManager.js</a>, <a href="server_node_components_RPCManager.js.html#line50">line 50</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>term</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Leader's current term.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>prevLogIndex</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Index of log entry immediately preceding new ones.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>prevLogTerm</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">null</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Term of prevLogIndex entry</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>entries</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;<a href="LogRecord.html">LogRecord</a>></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Log entries to store.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>leaderCommit</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Leader’s commitIndex</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="sendReplicationResponse"><span class="type-signature"></span>sendReplicationResponse<span class="signature">(receiver, term, success, matchIndex)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>RPC response for appending entries and log replication.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_RPCManager.js.html">server_node/components/RPCManager.js</a>, <a href="server_node_components_RPCManager.js.html#line74">line 74</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>receiver</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">SocketCl</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Socket of the server who sent the replication request (the leader).</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>term</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>CurrentTerm, for leader to update itself.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>success</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>True if follower contained entry matching revLogIndex and prevLogTerm.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>matchIndex</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Index of highest log entry known to be replicated on follower's server.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="sendReplicationTo"><span class="type-signature"></span>sendReplicationTo<span class="signature">(receiver, term, prevLogIndex, prevLogTerm, entries, leaderCommit)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>RPC request for appending entries and log replication in a single node.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_RPCManager.js.html">server_node/components/RPCManager.js</a>, <a href="server_node_components_RPCManager.js.html#line63">line 63</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>receiver</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">SocketCl</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>term</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Leader's current term.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>prevLogIndex</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Index of log entry immediately preceding new ones.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>prevLogTerm</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+|
+
+<span class="param-type">null</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Term of prevLogIndex entry</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>entries</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;<a href="LogRecord.html">LogRecord</a>></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Log entries to store.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>leaderCommit</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Leader’s commitIndex</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="sendSnapshotMessage"><span class="type-signature"></span>sendSnapshotMessage<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Send a snapshot RPC message to all other nodes.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_RPCManager.js.html">server_node/components/RPCManager.js</a>, <a href="server_node_components_RPCManager.js.html#line111">line 111</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="sendSnapshotResponse"><span class="type-signature"></span>sendSnapshotResponse<span class="signature">(receiver)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Send a snapshot RPC response to a specified receiver.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_RPCManager.js.html">server_node/components/RPCManager.js</a>, <a href="server_node_components_RPCManager.js.html#line119">line 119</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>receiver</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">SocketCl</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Socket of the node to receive the snapshot response.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="sendTo"><span class="type-signature"></span>sendTo<span class="signature">(receiver, rpcType, rpcParameters)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Send a specified RPC and its parameters to a specified destination server.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_RPCManager.js.html">server_node/components/RPCManager.js</a>, <a href="server_node_components_RPCManager.js.html#line27">line 27</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>receiver</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">SocketCl</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Destination server.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>rpcType</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Type of RPC to be sent to the receiver.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>rpcParameters</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="RPCParameters.html">RPCParameters</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Parameters useful for the RPC.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="sendVote"><span class="type-signature"></span>sendVote<span class="signature">(receiver, voteGranted)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>RPC response made by a server for voting during a new leader election.</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_RPCManager.js.html">server_node/components/RPCManager.js</a>, <a href="server_node_components_RPCManager.js.html#line104">line 104</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>receiver</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">SocketCl</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Socket of the candidate who started the election.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>voteGranted</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>True means candidate received vote.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.2</a> on Sat Dec 16 2023 18:24:10 GMT+0100 (Central European Standard Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/search.js" defer></script>
+
+
+
+</body>
+</html>

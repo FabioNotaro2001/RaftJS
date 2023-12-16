@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>GetAllOpenAuctionsResponse - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    <input type="text" id="nav-search" placeholder="Search" />
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="AppendEntriesParameters.html">AppendEntriesParameters</a><ul class='methods'><li data-type='method'><a href="AppendEntriesParameters.html#.forRequest">forRequest</a></li><li data-type='method'><a href="AppendEntriesParameters.html#.forResponse">forResponse</a></li></ul></li><li><a href="AuctionCloseData.html">AuctionCloseData</a></li><li><a href="AuctionCreateData.html">AuctionCreateData</a></li><li><a href="BidCreateData.html">BidCreateData</a></li><li><a href="CloseAuctionRequest_CloseAuctionRequest.html">CloseAuctionRequest</a></li><li><a href="DBManager_DBManager.html">DBManager</a></li><li><a href="GetAllOpenAuctionsResponse.html">GetAllOpenAuctionsResponse</a></li><li><a href="GetAuctionInfoRequest_GetAuctionInfoRequest.html">GetAuctionInfoRequest</a></li><li><a href="GetAuctionInfoResponse.html">GetAuctionInfoResponse</a></li><li><a href="GetLastBidsRequest_GetLastBidsRequest.html">GetLastBidsRequest</a></li><li><a href="GetLastBidsResponse.html">GetLastBidsResponse</a></li><li><a href="GetNewBidsRequest_GetNewBidsRequest.html">GetNewBidsRequest</a></li><li><a href="GetNewBidsResponse.html">GetNewBidsResponse</a></li><li><a href="GetUserAuctionsRequest_GetUserAuctionsRequest.html">GetUserAuctionsRequest</a></li><li><a href="GetUserAuctionsResponse.html">GetUserAuctionsResponse</a></li><li><a href="GetUserParticipationsRequest_GetUserParticipationsRequest.html">GetUserParticipationsRequest</a></li><li><a href="GetUserParticipationsResponse.html">GetUserParticipationsResponse</a></li><li><a href="LogRecord.html">LogRecord</a></li><li><a href="LoginRequest_LoginRequest.html">LoginRequest</a></li><li><a href="NewAuctionRequest_NewAuctionRequest.html">NewAuctionRequest</a></li><li><a href="NewBidRequest_NewBidRequest.html">NewBidRequest</a></li><li><a href="NewUserRequest_NewUserRequest.html">NewUserRequest</a></li><li><a href="RPCManager.html">RPCManager</a><ul class='methods'><li data-type='method'><a href="RPCManager.html#sendAll">sendAll</a></li><li data-type='method'><a href="RPCManager.html#sendElectionNotice">sendElectionNotice</a></li><li data-type='method'><a href="RPCManager.html#sendElectionNoticeTo">sendElectionNoticeTo</a></li><li data-type='method'><a href="RPCManager.html#sendReplication">sendReplication</a></li><li data-type='method'><a href="RPCManager.html#sendReplicationResponse">sendReplicationResponse</a></li><li data-type='method'><a href="RPCManager.html#sendReplicationTo">sendReplicationTo</a></li><li data-type='method'><a href="RPCManager.html#sendSnapshotMessage">sendSnapshotMessage</a></li><li data-type='method'><a href="RPCManager.html#sendSnapshotResponse">sendSnapshotResponse</a></li><li data-type='method'><a href="RPCManager.html#sendTo">sendTo</a></li><li data-type='method'><a href="RPCManager.html#sendVote">sendVote</a></li></ul></li><li><a href="RPCParameters.html">RPCParameters</a></li><li><a href="RaftNode_RaftNode.html">RaftNode</a></li><li><a href="RequestVoteParameters.html">RequestVoteParameters</a><ul class='methods'><li data-type='method'><a href="RequestVoteParameters.html#.forRequest">forRequest</a></li><li data-type='method'><a href="RequestVoteParameters.html#.forResponse">forResponse</a></li></ul></li><li><a href="SnapshotParameters.html">SnapshotParameters</a><ul class='methods'><li data-type='method'><a href="SnapshotParameters.html#.forRequest">forRequest</a></li><li data-type='method'><a href="SnapshotParameters.html#.forResponse">forResponse</a></li></ul></li><li><a href="StatusResults_StatusResults.html">StatusResults</a></li><li><a href="UserCreateData.html">UserCreateData</a></li><li><a href="UserExistsRequest_UserExistsRequest.html">UserExistsRequest</a></li><li><a href="WebServerManager.html">WebServerManager</a><ul class='methods'><li data-type='method'><a href="WebServerManager.html#onRequest">onRequest</a></li><li data-type='method'><a href="WebServerManager.html#start">start</a></li><li data-type='method'><a href="WebServerManager.html#stop">stop</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#CommandType">CommandType</a></li><li><a href="global.html#RPCType">RPCType</a></li><li><a href="global.html#State">State</a></li><li><a href="global.html#addAlert">addAlert</a></li><li><a href="global.html#config">config</a></li><li><a href="global.html#connectToRaftCluster">connectToRaftCluster</a></li><li><a href="global.html#getFormData">getFormData</a></li><li><a href="global.html#getHostString">getHostString</a></li><li><a href="global.html#otherNodes">otherNodes</a></li><li><a href="global.html#ports">ports</a></li><li><a href="global.html#sock">sock</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">GetAllOpenAuctionsResponse</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>
+        
+            GetAllOpenAuctionsResponse
+        
+        </h2>
+        
+            <div class="class-description usertext"><p>Response class for retrieving information on all open auctions.</p></div>
+        
+    
+</header>
+
+<article>
+    
+        <div class="container-overview">
+        
+            
+
+    
+    <h2>Constructor</h2>
+    
+
+    <h4 class="name" id="GetAllOpenAuctionsResponse"><span class="type-signature"></span>new GetAllOpenAuctionsResponse<span class="signature">(auctionId, objName, objDescription<span class="signature-attributes">nullable</span>, openingDate, startingPrice, highestBidValue<span class="signature-attributes">nullable</span>)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_ServerResponseTypes.js.html">server_node/components/ServerResponseTypes.js</a>, <a href="server_node_components_ServerResponseTypes.js.html#line32">line 32</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>auctionId</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>ID of the auction.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>objName</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Name of the auctioned object.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>objDescription</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+                    &lt;nullable><br>
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Description of the auctioned object.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>openingDate</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Date when the auction opens.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>startingPrice</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Starting price of the auction.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>highestBidValue</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+                    &lt;nullable><br>
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Value of the highest bid, if any.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+        </div>
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="GetAllOpenAuctionsResponse.html">GetAllOpenAuctionsResponse</a></dt>
+            <dd></dd>
+        </dl>
+    
+    
+    
+
+     
+
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="auctionId"><span class="type-signature"></span>auctionId<span class="type-signature"> :Number</span></h4>
+
+
+
+
+
+<dl class="details">
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_ServerResponseTypes.js.html">server_node/components/ServerResponseTypes.js</a>, <a href="server_node_components_ServerResponseTypes.js.html#line43">line 43</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Number</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="highestBidValue"><span class="type-signature type-signature-nullable">(nullable) </span>highestBidValue<span class="type-signature"> :Number</span></h4>
+
+
+
+
+
+<dl class="details">
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_ServerResponseTypes.js.html">server_node/components/ServerResponseTypes.js</a>, <a href="server_node_components_ServerResponseTypes.js.html#line53">line 53</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Number</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="objDescription"><span class="type-signature type-signature-nullable">(nullable) </span>objDescription<span class="type-signature"> :String</span></h4>
+
+
+
+
+
+<dl class="details">
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_ServerResponseTypes.js.html">server_node/components/ServerResponseTypes.js</a>, <a href="server_node_components_ServerResponseTypes.js.html#line47">line 47</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">String</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="objName"><span class="type-signature"></span>objName<span class="type-signature"> :String</span></h4>
+
+
+
+
+
+<dl class="details">
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_ServerResponseTypes.js.html">server_node/components/ServerResponseTypes.js</a>, <a href="server_node_components_ServerResponseTypes.js.html#line45">line 45</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">String</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="openingDate"><span class="type-signature"></span>openingDate<span class="type-signature"> :Date</span></h4>
+
+
+
+
+
+<dl class="details">
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_ServerResponseTypes.js.html">server_node/components/ServerResponseTypes.js</a>, <a href="server_node_components_ServerResponseTypes.js.html#line49">line 49</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Date</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="startingPrice"><span class="type-signature"></span>startingPrice<span class="type-signature"> :Number</span></h4>
+
+
+
+
+
+<dl class="details">
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="server_node_components_ServerResponseTypes.js.html">server_node/components/ServerResponseTypes.js</a>, <a href="server_node_components_ServerResponseTypes.js.html#line51">line 51</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Number</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+    
+
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.2</a> on Sat Dec 16 2023 18:24:10 GMT+0100 (Central European Standard Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+<script src="scripts/search.js" defer></script>
+
+
+
+</body>
+</html>

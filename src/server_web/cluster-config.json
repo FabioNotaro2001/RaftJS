@@ -1,30 +1,20 @@
 {
-    "serverPort": "5000",
+    "serverPort": "80",
     "nodes": [
         {
-            "host": "127.0.0.1",
-            "id": "Node1",
+            "host": "abedo.ddns.net",
+            "id": "node1",
             "port": 15001
         },
         {
-            "host": "127.0.0.1",
-            "id": "Node2",
-            "port": 15003
+            "host": "fnota.ddns.net",
+            "id": "node2",
+            "port": 15001
         },
         {
-            "host": "127.0.0.1",
-            "id": "Node3",
-            "port": 15005
-        },
-        {
-            "host": "127.0.0.1",
-            "id": "Node4",
-            "port": 15007
-        },
-        {
-            "host": "127.0.0.1",
-            "id": "Node5",
-            "port": 15009
+            "host": "79.23.243.113",
+            "id": "node3",
+            "port": 15001
         }
     ]
 }

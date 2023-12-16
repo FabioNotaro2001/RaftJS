@@ -3,8 +3,8 @@ $(document).ready(function () {
     let url = new URL(window.location.href);
     let id = url.searchParams.get('id');
 
-    printInfoObj();
-    loadBids();
+    printInfoObj(id);
+    loadBids(id);
     
     $("#logout").on("click", function() {
         $.ajax({
@@ -40,6 +40,7 @@ $(document).ready(function () {
         .done(function (data, success, response) {
             addAlert("alert","alert-success","Asta chiusa con successo!","");
             $("#closeAuction").addClass("btn-hidden");
+            printInfoObj(id);
         })
         .fail(function (response) {
             console.log(response);
@@ -49,9 +50,6 @@ $(document).ready(function () {
     });
     
     $("form").submit(function (event) {
-        let url = new URL(window.location.href);
-        let id = url.searchParams.get('id');
-
         event.preventDefault(); 
         let datas = getFormData("form_ast");
         datas.auctionId = id;
@@ -75,8 +73,8 @@ $(document).ready(function () {
                 addAlert("alert2","alert-danger","Errore nell'inserimento dell'offerta.","");
             } else {
                 $("#myModal").modal('toggle');
-                printInfoObj();
-                loadBids();
+                printInfoObj(id);
+                loadBids(id);
             }
         })
         .fail(function (response) {
@@ -96,9 +94,7 @@ $(document).ready(function () {
 
 });
 
-function printInfoObj(){
-    let url = new URL(window.location.href);
-    let id = url.searchParams.get('id');
+function printInfoObj(id){
     let jsonData = JSON.stringify({ auctionId: id });
 
     $.ajax({
@@ -112,6 +108,7 @@ function printInfoObj(){
         let userCookie = document.cookie.split("user=")[1];
 
         if (!data.closed) {
+
             if(data.creator == userCookie){
                 $("#closeAuction").removeClass("btn-hidden");
             } else{
@@ -133,9 +130,25 @@ function printInfoObj(){
                         </div>
                     </div>
                     <div class="row">
+        `;
+        if(!data.closed){
+            html+=`         
                         <div class="col-md-12">
                             <p class="card-text">${data.objDesc}</p>
                         </div>
+            `;
+        } else {
+            html+=`         
+                        <div class="col-md-10">
+                            <p class="card-text">${data.objDesc}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="card-text text-danger text-right">Asta chiusa</p>
+                        </div>
+            `;
+        }
+        html+=`
+        
                     </div>
                 </div>
             </div>
@@ -149,9 +162,7 @@ function printInfoObj(){
 
 }
 
-function loadBids(){
-    let url = new URL(window.location.href);
-    let id = url.searchParams.get('id');
+function loadBids(id){
     let jsonData = JSON.stringify({ auctionId: id });
     
     $.ajax({

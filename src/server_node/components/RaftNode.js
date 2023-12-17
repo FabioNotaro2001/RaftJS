@@ -204,7 +204,7 @@ export class RaftNode {
             let sock = io("ws://" + host, {
                 autoConnect: false,
                 reconnection: true,
-                reconnectionAttempts: 5,
+                reconnectionAttempts: Infinity,
                 reconnectionDelay: 1000,
                 auth: { token: this.id }
             });
@@ -484,21 +484,6 @@ export class RaftNode {
                     this.applyLogEntries();
                 } else {    // Log conflict on client: server has to decrement nextIndex until there is no longer a log conflict.
                     this.nextIndex.set(args.senderId, this.nextIndex.get(args.senderId) - 1);   // Decrement next index and retry.
-
-                    let prevLogIndex = this.nextIndex.get(args.senderId) - 1;
-                    let prevLogTerm = prevLogIndex >= 0 ? this.log[prevLogIndex].term : null;
-
-                    let missingEntries = this.log.slice(this.nextIndex.get(args.senderId));
-                    this.rpcManager.sendReplicationTo(senderSocket, this.currentTerm, prevLogIndex, prevLogTerm, missingEntries, this.commitIndex);
-                    this.debugLog("Received unsuccessful \"%s\" response from %s -> correcting and sending missing entries: %s.", RPCType.APPENDENTRIES, args.senderId, JSON.stringify({
-                        currentTerm: this.currentTerm,
-                        prevLogIndex: prevLogIndex,
-                        prevLogTerm: prevLogTerm,
-                        missingEntries: missingEntries,
-                        commitIndex: this.commitIndex
-                    }));
-                    this.lastSent.set(args.senderId, this.log.length - 1);
-
                     this.resetHeartbeatTimeout(args.senderId);
                 }
                 break;

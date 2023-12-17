@@ -78,7 +78,7 @@ $(document).ready(function () {
             }
         })
         .fail(function (response) {
-            console.log(response);
+            addAlert("alert2","alert-danger","Offerta non inserita, il prezzo è inferiore all'attuale.","");
         });
 
     });

@@ -354,7 +354,7 @@ export class DBManager {
                 FROM Auctions AS a LEFT JOIN Bids AS b
                     ON a.WinnerBid = b.Id
                 INNER JOIN Bids AS b1
-                    ON b.AuctionId = a.Id AND b1.UserMaker = ?
+                    ON b1.AuctionId = a.Id AND b1.UserMaker = ?
                 GROUP BY a.Id`,
                 [username]
             );

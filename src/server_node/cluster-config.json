@@ -9,7 +9,7 @@
         "minElectionDelay": 1000,
         "heartbeatTimeout": 1000
     },
-    "ownId": "node1",
+    "ownId": "node3",
     "dbHost": "127.0.0.1",
     "dbUser": "root",
     "dbPassword": "password",
@@ -23,11 +23,6 @@
         {
             "host": "fnota.ddns.net",
             "id": "node2",
-            "port": 15000
-        },
-        {
-            "host": "79.23.243.113",
-            "id": "node3",
             "port": 15000
         }
     ]

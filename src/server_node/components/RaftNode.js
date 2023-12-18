@@ -159,6 +159,8 @@ export class RaftNode {
             throw new Error("Node is already active.");
         }
 
+        this.started = true;
+
         this.debugLog("Starting node...");
 
         if (!this.disabledDB) {
@@ -198,7 +200,7 @@ export class RaftNode {
 
         // Connect to other nodes.
         this.otherNodes.forEach((id, host) => {
-            this.debugLog("Connecting to " + host);
+            this.debugLog("Connecting to " + id);
 
 
             let sock = io("ws://" + host, {
@@ -260,7 +262,13 @@ export class RaftNode {
             throw new Error("Node is not active.");
         }
 
+        this.started = false;
+
         this.debugLog("Stopping node...");
+
+        this.stopElectionTimeout();
+        this.stopHeartbeatTimeout();
+        this.stopLeaderTimeout();
 
         if (!this.disabledDB) {
             // Disconnect the node to the database through its DBmanager.
@@ -271,6 +279,8 @@ export class RaftNode {
         this.protocolServer.disconnectSockets(true);
 
         this.webServerManager.stop();
+
+        this.sockets.forEach((s) => s.disconnect());
 
         this.sockets.clear();
         this.socketToNodeId.clear();

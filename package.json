@@ -4,9 +4,6 @@
   "description": "Raft implementation",
   "main": "index.js",
   "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "keywords": [
     "raft"
   ],
@@ -19,5 +16,12 @@
     "mysql2": "^3.6.4",
     "socket.io": "^4.7.2",
     "socket.io-client": "^4.7.2"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.23.6",
+    "jest": "^29.7.0"
+  },
+  "scripts": {
+    "test": "jest"
   }
 }

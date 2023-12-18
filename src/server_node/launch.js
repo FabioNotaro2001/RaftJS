@@ -31,7 +31,7 @@ let nNodes = config.otherNodes.length + 1;
 let otherNodes = new Map();
 
 config.otherNodes.forEach((node) => {
-    otherNodes.set(node.id, node.host + ":" + node.port);
+    otherNodes.set(node.host + ":" + node.port, node.id);
 });
 
 new RaftNode(config.ownId, config.port1, config.port2, 
@@ -39,4 +39,4 @@ new RaftNode(config.ownId, config.port1, config.port2,
             config.protocolConfig.minElectionTimeout, config.protocolConfig.maxElectionTimeout, 
             config.protocolConfig.minElectionDelay, config.protocolConfig.heartbeatTimeout, 
             config.dbHost, config.dbUser, config.dbPassword, config.dbDatabase,
-            otherNodes).start();
+            otherNodes, true, true).start();

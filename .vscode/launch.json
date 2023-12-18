@@ -16,11 +16,20 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Launch Multiple Nodes",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/src/server_node/test.js"
+            "program": "${workspaceFolder}/src/server_node/launchMultiple.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Single Node",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/src/server_node/launch.js"
         }
     ]
 }

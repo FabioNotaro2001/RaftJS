@@ -1,28 +1,30 @@
 import { RaftNode } from "./components/RaftNode.js";
 import fs from 'fs';
 
-/** @type {{
- *      port1: Number,
- *      port2: Number,
- *      "protocolConfig": {
- *          "minLeaderTimeout": Number,
- *          "maxLeaderTimeout": Number,
- *          "minElectionTimeout": Number,
- *          "maxElectionTimeout": Number,
- *          "minElectionDelay": Number,
- *          "heartbeatTimeout": Number
- *      }, 
- *      ownId: String,
- *      dbHost: String,
- *      dbUser: String,
- *      dbPassword: String,
- *      dbDatabase: String, 
- *      otherNodes: {
- *          host: String,
- *          id: String,
- *          port: Number
- *      }[]
- * }} */
+/**
+ * @typedef {{
+*      port1: Number,
+*      port2: Number,
+*      protocolConfig: {
+*          minLeaderTimeout: Number,
+*          maxLeaderTimeout: Number,
+*          minElectionTimeout: Number,
+*          maxElectionTimeout: Number,
+*          minElectionDelay: Number,
+*          heartbeatTimeout: Number
+*      }, 
+*      ownId: String,
+*      dbHost: String,
+*      dbUser: String,
+*      dbPassword: String,
+*      dbDatabase: String, 
+*      otherNodes: Array<{
+*          host: String,
+*          id: String,
+*          port: Number
+*      }>
+* }} MyObjectType
+*/
 const config = JSON.parse(fs.readFileSync("./src/server_node/cluster-config.json", "utf8"));
 
 let nNodes = config.otherNodes.length + 1;

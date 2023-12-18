@@ -61,14 +61,11 @@ export class WebServerManager {
 
     /**
      * Handles incoming client requests.
-     * @param {String} commandType Type of the command.
-     * @param {ClientRequest} args The arguments of the command.
-     * @param {(response: any) => {}} callback Callback function to send the response.
+     * @param {String} commandType - Type of the command.
+     * @param {ClientRequest} args - The arguments of the command.
+     * @param {function} callback - Callback function to send the response.
      */
     async onRequest(commandType, args, callback) {
-        // Get the index and term for the previous log entry
-        let prevLogIndex = this.raftNode.log.length - 1;
-        let prevLogTerm = this.raftNode.log.at(-1);
 
         // Process each command type
         switch (commandType) {

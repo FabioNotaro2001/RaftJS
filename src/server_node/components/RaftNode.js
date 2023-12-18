@@ -533,7 +533,7 @@ export class RaftNode {
                     break;
                 }
 
-                if (this.votedFor == null) {
+                if (this.votedFor == null && (this.log.length < args.lastLogIndex + 1 || this.log[args.lastLogIndex].term == args.lastLogTerm)) {
                     this.votedFor = args.senderId;
                     this.rpcManager.sendVote(senderSocket, this.currentTerm, true);
                     this.debugLog("Received \"%s\" request from %s -> cast vote.", RPCType.REQUESTVOTE, args.senderId);

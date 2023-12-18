@@ -10,8 +10,6 @@ import { DBManager } from "./DBManager.js";
 import { CommandType } from "../enums/CommandType.js";
 import { WebServerManager } from "./WebServerManager.js";
 
-// TODO: rimuovere parti di codice riguardanti i test test che avevamo fatto (simulateLeaderDisconnection, clientRequestInterval).
-
 export class RaftNode {
     /**
      * Creates a new node for the Raft consensus protocol cluster.
@@ -65,9 +63,6 @@ export class RaftNode {
         this.minElectionDelay = minElectionDelay;
         /** @type {Number} */
         this.heartbeatTimeout = heartbeatTimeout;
-
-        this.simulateLeaderDisconnection = false;
-        this.clientRequestInterval = null;
 
         if (!disabledDB) {
             /** @type {DBManager} */
@@ -583,19 +578,6 @@ export class RaftNode {
                                 commitIndex: this.commitIndex
                             }));
 
-                            // this.clientRequestInterval = setInterval(() => {
-                            //     this.debugLog("Received client request!");
-                            //     this.log.push(new LogRecord(this.currentTerm, CommandType.NEW_USER, new UserCreateData("fabio", "password"), () => { this.debugLog("Leader COMMIT"); }));
-                            // }, 6000);
-                            
-                            // this.simulateLeaderDisconnection = false;
-                            // setTimeout(() => {
-                            //     this.simulateLeaderDisconnection = true; 
-                            //     this.debugLog("Leader stop responding.");
-                            //     clearInterval(this.clientRequestInterval);
-                            //     this.clientRequestInterval = null;
-                            // }, 13000);
-
                             this.resetHeartbeatTimeout();
                             this.stopElectionTimeout();
                         }
@@ -667,9 +649,6 @@ export class RaftNode {
      * @param {String | null} nodeId The node to which we must send the heartbeat when the timeout expires. If null, the heartbeat is sent to all other nodes.
      */
     waitForHeartbeatTimeout(nodeId = null) {
-        if(this.simulateLeaderDisconnection){
-            return;
-        }
         let thisNode = this;
         let sendHeartbeat = null;
 

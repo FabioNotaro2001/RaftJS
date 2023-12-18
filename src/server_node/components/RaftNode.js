@@ -10,14 +10,7 @@ import { DBManager } from "./DBManager.js";
 import { CommandType } from "../enums/CommandType.js";
 import { WebServerManager } from "./WebServerManager.js";
 
-// const MAX_ENTRIES_IN_REQUEST = 10;  // Max number of request that can be put together in a single request.
-
-/*
-NOTA: Quando una entry del log viene applicata al db, il leader usa il callback per notificare il client web del risultato dell'operazione. Qualora
-    il server non riesca a rispondere per qualsiasi motivo, il client non riceverà risposta perché le funzioni di callback non possono essere serializzate
-    in JSON.
- */
-
+// TODO: rimuovere parti di codice riguardanti i test test che avevamo fatto (simulateLeaderDisconnection, clientRequestInterval).
 
 export class RaftNode {
     /**
@@ -704,7 +697,7 @@ export class RaftNode {
         if (nodeId != null) { // Sends an heartbeat to a specified node.
             thisNode.heartbeatTimeouts.set(nodeId, setTimeout(() => sendHeartbeat(nodeId), thisNode.heartbeatTimeout));
         } else { // Sends an heartbeat to all other nodes.
-            thisNode.otherNodes.forEach(( _, nodeId) => {
+            thisNode.otherNodes.forEach((nodeId, _) => {
                 thisNode.heartbeatTimeouts.set(nodeId, setTimeout(() => sendHeartbeat(nodeId), thisNode.heartbeatTimeout));
             });
         }
@@ -761,7 +754,7 @@ export class RaftNode {
             this.heartbeatTimeouts.delete(nodeId);
         } else {
             this.sockets.forEach((_, id) => {
-                clearInterval(this.heartbeatTimeouts.get(id));
+                clearTimeout(this.heartbeatTimeouts.get(id));
             });
             this.heartbeatTimeouts.clear();
         }

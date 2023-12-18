@@ -32,10 +32,10 @@ function createNodes() {
     return nodes;
 }
 
-test('Nodes successfully replicate a log entry', async () => {
+test('A leader between the nodes.', async () => {
     let nodes = createNodes();
 
-    nodes.forEach((e) => e.start());
+    nodes.forEach((n) => n.start());
 
     for (const node of nodes) {
         expect(node.log.length).toBe(0);
@@ -52,9 +52,31 @@ test('Nodes successfully replicate a log entry', async () => {
 
     await promise;  // Wait for the election of a leader.
 
+    let leaderNode = nodes.find(n => n.state == State.LEADER);
+    expect(leaderNode).toBeDefined();
+
+    nodes.forEach((n) => n.stop());
+}, 15000);
+
+test('Nodes successfully replicate a log entry', async () => {
+    let nodes = createNodes();
+
+    nodes.forEach((n) => n.start());
+
     for (const node of nodes) {
-        console.log(node.state);
+        expect(node.log.length).toBe(0);
     }
+
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    setTimeout(() => {
+        resolvePromise();
+    }, 10000);
+
+    await promise;  // Wait for the election of a leader.
 
     let leaderNode = nodes.find(n => n.state == State.LEADER);
     expect(leaderNode).toBeDefined();
@@ -78,6 +100,43 @@ test('Nodes successfully replicate a log entry', async () => {
         expect(node.log[0].logData.password).toBe("password");
     }
 
-    nodes.forEach((e) => e.stop());
-}, 25000);
+    nodes.forEach((n) => n.stop());
+}, 20000);
 
+test('A new leader is elected in case the old one stops working.', async () => {
+    let nodes = createNodes();
+
+    nodes.forEach((n) => n.start());
+
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    setTimeout(() => {
+        resolvePromise();
+    }, 10000);
+
+    await promise;  // Wait for the election of a leader.
+
+    let leaderNode = nodes.find(n => n.state == State.LEADER);
+    expect(leaderNode).toBeDefined();
+        
+    leaderNode.stop();
+    
+    resolvePromise = undefined;
+    promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    setTimeout(() => {
+        resolvePromise();
+    }, 10000);
+
+    await promise;  // Wait for the election of a new leader.
+
+    leaderNode = nodes.find(n => n.state == State.LEADER);
+    expect(leaderNode).toBeDefined();
+
+    nodes.forEach((n) => { if(n.started) n.stop(); });
+}, 25000);

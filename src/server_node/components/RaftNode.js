@@ -533,6 +533,11 @@ export class RaftNode {
 
         switch (this.state) {
             case State.FOLLOWER: {
+                if (args.isResponse) {
+                    this.debugLog("Received \"%s\" request from %s -> ignore.", RPCType.REQUESTVOTE, args.senderId);
+                    break;
+                }
+
                 if (this.votedFor == null) {
                     this.votedFor = args.senderId;
                     this.rpcManager.sendVote(senderSocket, this.currentTerm, true);

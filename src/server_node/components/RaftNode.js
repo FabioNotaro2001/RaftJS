@@ -533,7 +533,7 @@ export class RaftNode {
                     break;
                 }
 
-                if (this.votedFor == null && (this.log.length < args.lastLogIndex + 1 || this.log[args.lastLogIndex].term == args.lastLogTerm)) {
+                if (this.votedFor == null && (this.log.length < args.lastLogIndex + 1 || this.log[args.lastLogIndex]?.term == args.lastLogTerm)) {
                     this.votedFor = args.senderId;
                     this.rpcManager.sendVote(senderSocket, this.currentTerm, true);
                     this.debugLog("Received \"%s\" request from %s -> cast vote.", RPCType.REQUESTVOTE, args.senderId);
@@ -610,7 +610,7 @@ export class RaftNode {
         this.currentTerm++;
         this.currentLeaderId = null;
         this.votesGathered = 1;
-        this.rpcManager.sendElectionNotice(this.currentTerm, this.id, this.log.length - 1, this.log.at(-1) != null ? this.log.at(-1).term : null);
+        this.rpcManager.sendElectionNotice(this.currentTerm, this.log.length - 1, this.log.at(-1) != null ? this.log.at(-1).term : null);
         this.stopLeaderTimeout();       // Disables leader timeout.
         this.resetElectionTimeout();    // Set a timeout in case the election doesn't end.
         this.resetHeartbeatTimeout();   // Set a timeout in case other nodes do not respond.

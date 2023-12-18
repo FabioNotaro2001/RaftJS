@@ -420,14 +420,15 @@ export class RaftNode {
                     this.currentLeaderId = args.senderId;
                 }
 
+                let logLength = args.prevLogIndex + 1;
+                if ((this.log.length > 0 && args.prevLogIndex < 0) || (this.log[args.prevLogIndex] && this.log[args.prevLogIndex].term !== args.prevLogTerm)) {
+                    this.log.length = logLength;    // Delete all records starting from the conflicting one.
+                    this.commitIndex = this.log.length - 1;
+                    this.debugLog("Conflicting entry/ies found and removed from log. Log is now %d records long.", this.log.length);
+                }
+
                 if (args.entries.length > 0) {
-                    args.entries.forEach((e, i) => {
-                        let newEntryIndex = args.prevLogIndex + i + 1;
-                        if (this.log.length > 0 && ( this.log[newEntryIndex] && this.log[newEntryIndex].term !== e.term)) {
-                            this.log.length = newEntryIndex;    // Delete all records starting from the conflicting one.
-                            this.commitIndex = this.log.length - 1;
-                            this.debugLog("Conflicting entry/ies found and removed from log. Log is now %d records long.", this.log.length);
-                        }
+                    args.entries.forEach((e, _) => {
                         this.log.push(e);
                     });
 
@@ -446,7 +447,6 @@ export class RaftNode {
                 break;
             }
             case State.LEADER: {
-
                 // This message is sent by an older leader and is no longer relevant.
                 if (!args.isResponse) {
                     this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false, this.commitIndex, this.lastApplied);

@@ -1,9 +1,11 @@
-import {expect, test} from '@jest/globals';
+import {expect, test, beforeEach, afterEach} from '@jest/globals';
 
 import { RaftNode } from "../components/RaftNode.js";
 import { State } from "../enums/State.js";
 import { LogRecord, UserCreateData } from "../components/Log.js";
 import { CommandType } from '../enums/CommandType.js';
+
+let nodes;
 
 function createNodes() {
     let nNodes = 5;
@@ -32,11 +34,16 @@ function createNodes() {
     return nodes;
 }
 
-test('A leader between the nodes.', async () => {
-    let nodes = createNodes();
-
+beforeEach(() => {
+    nodes = createNodes();
     nodes.forEach((n) => n.start());
+});
 
+afterEach(() => {
+    nodes.forEach((n) => { if(n.started) n.stop(); });
+})
+
+test('A leader between the nodes.', async () => {
     for (const node of nodes) {
         expect(node.log.length).toBe(0);
     }
@@ -54,15 +61,10 @@ test('A leader between the nodes.', async () => {
 
     let leaderNode = nodes.find(n => n.state == State.LEADER);
     expect(leaderNode).toBeDefined();
-
-    nodes.forEach((n) => n.stop());
 }, 15000);
 
+
 test('Nodes successfully replicate a log entry', async () => {
-    let nodes = createNodes();
-
-    nodes.forEach((n) => n.start());
-
     for (const node of nodes) {
         expect(node.log.length).toBe(0);
     }
@@ -99,15 +101,9 @@ test('Nodes successfully replicate a log entry', async () => {
         expect(node.log[0].logData.username).toBe("user");
         expect(node.log[0].logData.password).toBe("password");
     }
-
-    nodes.forEach((n) => n.stop());
 }, 20000);
 
 test('A new leader is elected in case the old one stops working.', async () => {
-    let nodes = createNodes();
-
-    nodes.forEach((n) => n.start());
-
     let resolvePromise;
     let promise = new Promise((resolve) => {
         resolvePromise = resolve;
@@ -137,6 +133,35 @@ test('A new leader is elected in case the old one stops working.', async () => {
 
     leaderNode = nodes.find(n => n.state == State.LEADER);
     expect(leaderNode).toBeDefined();
-
-    nodes.forEach((n) => { if(n.started) n.stop(); });
 }, 25000);
+
+test('Incorrect log entries are removed.', async () => {
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    setTimeout(() => {
+        resolvePromise();
+    }, 10000);
+
+    await promise;  // Wait for the election of a leader.
+
+    let followerNode = nodes.find(n => n.state == State.FOLLOWER);
+    expect(followerNode).toBeDefined();
+        
+    followerNode.log.push(new LogRecord(1, CommandType.NEW_USER, new UserCreateData("user", "password"), () => {}));
+    
+    resolvePromise = undefined;
+    promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    setTimeout(() => {
+        resolvePromise();
+    }, 5000);
+
+    await promise;  // Wait for the election of a new leader.
+
+    expect(followerNode.log.length).toBe(0);
+}, 20000);

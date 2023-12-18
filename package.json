@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "jest --verbose",
+    "test": "jest",
     "docs": "jsdoc -d docs --configure jsdocConf.json" 
   },
   "keywords": [

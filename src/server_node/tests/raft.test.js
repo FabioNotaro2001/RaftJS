@@ -43,7 +43,7 @@ afterEach(() => {
     nodes.forEach((n) => { if(n.started) n.stop(); });
 })
 
-test('A leader between the nodes.', async () => {
+test('A leader is chosen between the nodes', async () => {
     for (const node of nodes) {
         expect(node.log.length).toBe(0);
     }
@@ -103,7 +103,7 @@ test('Nodes successfully replicate a log entry', async () => {
     }
 }, 20000);
 
-test('A new leader is elected in case the old one stops working.', async () => {
+test('New leader election', async () => {
     let resolvePromise;
     let promise = new Promise((resolve) => {
         resolvePromise = resolve;
@@ -135,7 +135,7 @@ test('A new leader is elected in case the old one stops working.', async () => {
     expect(leaderNode).toBeDefined();
 }, 25000);
 
-test('Incorrect log entries are removed.', async () => {
+test('Incorrect log entries are removed', async () => {
     let resolvePromise;
     let promise = new Promise((resolve) => {
         resolvePromise = resolve;

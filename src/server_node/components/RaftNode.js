@@ -581,10 +581,6 @@ export class RaftNode {
                                 commitIndex: this.commitIndex
                             }));
 
-                            setInterval(() => {
-                                this.log.push(new LogRecord(this.currentTerm, CommandType.NEW_USER, new UserCreateData("user", "password"), () => {}));
-                            }, 3000);
-
                             this.resetHeartbeatTimeout();
                             this.stopElectionTimeout();
                         }

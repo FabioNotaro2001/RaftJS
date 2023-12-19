@@ -391,23 +391,19 @@ export class RaftNode {
         switch (this.state) {
             case State.FOLLOWER: {
                 if (args.isResponse) {
-                    this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false);
-                    this.debugLog("Received \"%s\" response from %s -> refused.", RPCType.APPENDENTRIES, args.senderId);
-                    this.resetLeaderTimeout();
+                    this.debugLog("Received \"%s\" response from %s -> ignored.", RPCType.APPENDENTRIES, args.senderId);
                     break;
                 }
 
                 if (args.term < this.currentTerm) {
                     this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false);    
                     this.debugLog("Received %s message from %s with previous term %d -> refused.", RPCType.APPENDENTRIES, args.senderId, args.term);
-                    this.resetLeaderTimeout();
                     break;
                 }
 
                 if (args.prevLogIndex >= 0 && (!this.log[args.prevLogIndex] || this.log[args.prevLogIndex].term !== args.prevLogTerm)) {
                     this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false);
-                    this.debugLog("Received %s message from %s with wrong prevLogIndex or prevLogTerm", RPCType.APPENDENTRIES, args.senderId);
-                    this.resetLeaderTimeout();
+                    this.debugLog("Received %s message from %s with wrong prevLogIndex (%s) or prevLogTerm (%s). Expected: %s and %s .", RPCType.APPENDENTRIES, args.senderId, args.prevLogIndex, args.prevLogTerm, this.log.length - 1, this.log.at(-1)?.term);
                     break;
                 }
 
@@ -417,9 +413,10 @@ export class RaftNode {
 
                 let logLength = args.prevLogIndex + 1;
                 if ((this.log.length > 0 && args.prevLogIndex < 0) || (this.log[args.prevLogIndex] && this.log[args.prevLogIndex].term !== args.prevLogTerm)) {
+                    let prevLogLength = this.log.length;
                     this.log.length = logLength;    // Delete all records starting from the conflicting one.
                     this.commitIndex = this.log.length - 1;
-                    this.debugLog("Conflicting entry/ies found and removed from log. Log is now %d records long.", this.log.length);
+                    this.debugLog("Conflicting entry/ies found and removed from log. Log length %d -> %d", prevLogLength, this.log.length);
                 }
 
                 if (args.entries.length > 0) {
@@ -446,6 +443,7 @@ export class RaftNode {
                 if (!args.isResponse) {
                     this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false, this.commitIndex, this.lastApplied);
                     this.debugLog("Received \"%s\" request from %s with previous term %d -> refused.", RPCType.APPENDENTRIES, args.senderId, args.term);
+                    break;
                 }
 
                 if (args.success) { // Leader was not rejected.
@@ -487,6 +485,11 @@ export class RaftNode {
                 break;
             }
             case State.CANDIDATE: {
+                if (args.isResponse) {
+                    this.debugLog("Received \"%s\" response from %s -> ignored.", RPCType.APPENDENTRIES, args.senderId);
+                    break;
+                }
+
                 this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false, this.commitIndex, this.lastApplied); // The message is for a previous term and it is rejected.
                 this.debugLog("Received \"%s\" message from %s with outdated term %d -> refused.", RPCType.APPENDENTRIES, args.senderId, args.term);
                 break;

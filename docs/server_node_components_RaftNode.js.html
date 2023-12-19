@@ -59,15 +59,6 @@ import { DBManager } from "./DBManager.js";
 import { CommandType } from "../enums/CommandType.js";
 import { WebServerManager } from "./WebServerManager.js";
 
-// const MAX_ENTRIES_IN_REQUEST = 10;  // Max number of request that can be put together in a single request.
-
-/*
-NOTA: Quando una entry del log viene applicata al db, il leader usa il callback per notificare il client web del risultato dell'operazione. Qualora
-    il server non riesca a rispondere per qualsiasi motivo, il client non riceverà risposta perché le funzioni di callback non possono essere serializzate
-    in JSON.
- */
-
-
 export class RaftNode {
     /**
      * Creates a new node for the Raft consensus protocol cluster.
@@ -121,9 +112,6 @@ export class RaftNode {
         this.minElectionDelay = minElectionDelay;
         /** @type {Number} */
         this.heartbeatTimeout = heartbeatTimeout;
-
-        this.simulateLeaderDisconnection = false;
-        this.clientRequestInterval = null;
 
         if (!disabledDB) {
             /** @type {DBManager} */
@@ -208,6 +196,8 @@ export class RaftNode {
             throw new Error("Node is already active.");
         }
 
+        this.started = true;
+
         this.debugLog("Starting node...");
 
         if (!this.disabledDB) {
@@ -247,13 +237,13 @@ export class RaftNode {
 
         // Connect to other nodes.
         this.otherNodes.forEach((id, host) => {
-            this.debugLog("Connecting to " + host);
+            this.debugLog("Connecting to " + id);
 
 
-            let sock = io("ws://" + id, {
+            let sock = io("ws://" + host, {
                 autoConnect: false,
                 reconnection: true,
-                reconnectionAttempts: 5,
+                reconnectionAttempts: Infinity,
                 reconnectionDelay: 1000,
                 auth: { token: this.id }
             });
@@ -309,7 +299,13 @@ export class RaftNode {
             throw new Error("Node is not active.");
         }
 
+        this.started = false;
+
         this.debugLog("Stopping node...");
+
+        this.stopElectionTimeout();
+        this.stopHeartbeatTimeout();
+        this.stopLeaderTimeout();
 
         if (!this.disabledDB) {
             // Disconnect the node to the database through its DBmanager.
@@ -320,6 +316,8 @@ export class RaftNode {
         this.protocolServer.disconnectSockets(true);
 
         this.webServerManager.stop();
+
+        this.sockets.forEach((s) => s.disconnect());
 
         this.sockets.clear();
         this.socketToNodeId.clear();
@@ -466,14 +464,15 @@ export class RaftNode {
                     this.currentLeaderId = args.senderId;
                 }
 
+                let logLength = args.prevLogIndex + 1;
+                if ((this.log.length > 0 &amp;&amp; args.prevLogIndex &lt; 0) || (this.log[args.prevLogIndex] &amp;&amp; this.log[args.prevLogIndex].term !== args.prevLogTerm)) {
+                    this.log.length = logLength;    // Delete all records starting from the conflicting one.
+                    this.commitIndex = this.log.length - 1;
+                    this.debugLog("Conflicting entry/ies found and removed from log. Log is now %d records long.", this.log.length);
+                }
+
                 if (args.entries.length > 0) {
-                    args.entries.forEach((e, i) => {
-                        let newEntryIndex = args.prevLogIndex + i + 1;
-                        if (this.log.length > 0 &amp;&amp; ( this.log[newEntryIndex] &amp;&amp; this.log[newEntryIndex].term !== e.term)) {
-                            this.log.length = newEntryIndex;    // Delete all records starting from the conflicting one.
-                            this.commitIndex = this.log.length - 1;
-                            this.debugLog("Conflicting entry/ies found and removed from log. Log is now %d records long.", this.log.length);
-                        }
+                    args.entries.forEach((e, _) => {
                         this.log.push(e);
                     });
 
@@ -492,7 +491,6 @@ export class RaftNode {
                 break;
             }
             case State.LEADER: {
-
                 // This message is sent by an older leader and is no longer relevant.
                 if (!args.isResponse) {
                     this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false, this.commitIndex, this.lastApplied);
@@ -533,21 +531,6 @@ export class RaftNode {
                     this.applyLogEntries();
                 } else {    // Log conflict on client: server has to decrement nextIndex until there is no longer a log conflict.
                     this.nextIndex.set(args.senderId, this.nextIndex.get(args.senderId) - 1);   // Decrement next index and retry.
-
-                    let prevLogIndex = this.nextIndex.get(args.senderId) - 1;
-                    let prevLogTerm = prevLogIndex >= 0 ? this.log[prevLogIndex].term : null;
-
-                    let missingEntries = this.log.slice(this.nextIndex.get(args.senderId));
-                    this.rpcManager.sendReplicationTo(senderSocket, this.currentTerm, prevLogIndex, prevLogTerm, missingEntries, this.commitIndex);
-                    this.debugLog("Received unsuccessful \"%s\" response from %s -> correcting and sending missing entries: %s.", RPCType.APPENDENTRIES, args.senderId, JSON.stringify({
-                        currentTerm: this.currentTerm,
-                        prevLogIndex: prevLogIndex,
-                        prevLogTerm: prevLogTerm,
-                        missingEntries: missingEntries,
-                        commitIndex: this.commitIndex
-                    }));
-                    this.lastSent.set(args.senderId, this.log.length - 1);
-
                     this.resetHeartbeatTimeout(args.senderId);
                 }
                 break;
@@ -594,7 +577,12 @@ export class RaftNode {
 
         switch (this.state) {
             case State.FOLLOWER: {
-                if (this.votedFor == null) {
+                if (args.isResponse) {
+                    this.debugLog("Received \"%s\" request from %s -> ignore.", RPCType.REQUESTVOTE, args.senderId);
+                    break;
+                }
+
+                if (this.votedFor == null &amp;&amp; (this.log.length &lt; args.lastLogIndex + 1 || this.log[args.lastLogIndex]?.term == args.lastLogTerm)) {
                     this.votedFor = args.senderId;
                     this.rpcManager.sendVote(senderSocket, this.currentTerm, true);
                     this.debugLog("Received \"%s\" request from %s -> cast vote.", RPCType.REQUESTVOTE, args.senderId);
@@ -639,19 +627,6 @@ export class RaftNode {
                                 commitIndex: this.commitIndex
                             }));
 
-                            // this.clientRequestInterval = setInterval(() => {
-                            //     this.debugLog("Received client request!");
-                            //     this.log.push(new LogRecord(this.currentTerm, CommandType.NEW_USER, new UserCreateData("fabio", "password"), () => { this.debugLog("Leader COMMIT"); }));
-                            // }, 6000);
-                            
-                            // this.simulateLeaderDisconnection = false;
-                            // setTimeout(() => {
-                            //     this.simulateLeaderDisconnection = true; 
-                            //     this.debugLog("Leader stop responding.");
-                            //     clearInterval(this.clientRequestInterval);
-                            //     this.clientRequestInterval = null;
-                            // }, 13000);
-
                             this.resetHeartbeatTimeout();
                             this.stopElectionTimeout();
                         }
@@ -684,7 +659,7 @@ export class RaftNode {
         this.currentTerm++;
         this.currentLeaderId = null;
         this.votesGathered = 1;
-        this.rpcManager.sendElectionNotice(this.currentTerm, this.id, this.log.length - 1, this.log.at(-1) != null ? this.log.at(-1).term : null);
+        this.rpcManager.sendElectionNotice(this.currentTerm, this.log.length - 1, this.log.at(-1) != null ? this.log.at(-1).term : null);
         this.stopLeaderTimeout();       // Disables leader timeout.
         this.resetElectionTimeout();    // Set a timeout in case the election doesn't end.
         this.resetHeartbeatTimeout();   // Set a timeout in case other nodes do not respond.
@@ -723,9 +698,6 @@ export class RaftNode {
      * @param {String | null} nodeId The node to which we must send the heartbeat when the timeout expires. If null, the heartbeat is sent to all other nodes.
      */
     waitForHeartbeatTimeout(nodeId = null) {
-        if(this.simulateLeaderDisconnection){
-            return;
-        }
         let thisNode = this;
         let sendHeartbeat = null;
 
@@ -815,7 +787,7 @@ export class RaftNode {
             this.heartbeatTimeouts.delete(nodeId);
         } else {
             this.sockets.forEach((_, id) => {
-                clearInterval(this.heartbeatTimeouts.get(id));
+                clearTimeout(this.heartbeatTimeouts.get(id));
             });
             this.heartbeatTimeouts.clear();
         }
@@ -844,7 +816,7 @@ export class RaftNode {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.2</a> on Sat Dec 16 2023 18:24:10 GMT+0100 (Central European Standard Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.2</a> on Tue Dec 19 2023 17:49:03 GMT+0100 (Central European Standard Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

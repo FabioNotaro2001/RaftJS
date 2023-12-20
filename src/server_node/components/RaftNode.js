@@ -385,7 +385,7 @@ export class RaftNode {
             this.resetLeaderTimeout();
 
 
-            this.debugLog("New leader detected. Changing to %s state...", State.FOLLOWER);
+            this.debugLog("New leader detected (%s). Changing to %s state...", args.senderId ?? "unknown", State.FOLLOWER);
         }
 
         switch (this.state) {
@@ -403,12 +403,13 @@ export class RaftNode {
 
                 if (args.prevLogIndex >= 0 && (!this.log[args.prevLogIndex] || this.log[args.prevLogIndex].term !== args.prevLogTerm)) {
                     this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false);
-                    this.debugLog("Received %s message from %s with wrong prevLogIndex (%s) or prevLogTerm (%s). Expected: %s and %s .", RPCType.APPENDENTRIES, args.senderId, args.prevLogIndex, args.prevLogTerm, this.log.length - 1, this.log.at(-1)?.term);
+                    this.debugLog("Received %s message from %s with wrong prevLogIndex (%s) or prevLogTerm (%s). Expected: %s and %s.", RPCType.APPENDENTRIES, args.senderId, args.prevLogIndex, args.prevLogTerm, this.log.length - 1, this.log.at(-1)?.term);
                     break;
                 }
                 
                 if (this.currentLeaderId == null) {            // Leader may not be known (see in case State.LEADER)
                     this.currentLeaderId = args.senderId;
+                    this.debugLog("Discovere leader: %s.", args.senderId);
                 } else {
                     if (this.currentLeaderId != args.senderId) {    // Invalid leader trying to act as one.
                         this.debugLog("Received %s message from %s who is not supposed to be a leader -> ignored.", RPCType.APPENDENTRIES, args.senderId);
@@ -416,16 +417,14 @@ export class RaftNode {
                     }
                 }
 
-                let logLength = args.prevLogIndex + 1;
-                if ((this.log.length > 0 && args.prevLogIndex < 0) || (this.log[args.prevLogIndex] && this.log[args.prevLogIndex].term !== args.prevLogTerm)) {
-                    let prevLogLength = this.log.length;
-                    this.log.length = logLength;    // Delete all records starting from the conflicting one.
-                    this.commitIndex = this.log.length - 1;
-                    this.debugLog("Conflicting entry/ies found and removed from log. Log length %d -> %d", prevLogLength, this.log.length);
-                }
-
                 if (args.entries.length > 0) {
-                    args.entries.forEach((e, _) => {
+                    args.entries.forEach((e, i) => {
+                        let newEntryIndex = args.prevLogIndex + i + 1;
+                        if (this.log[newEntryIndex] && this.log[newEntryIndex].term !== e.term) {
+                            this.log.length = newEntryIndex;        // Delete all records starting from the conflicting one.
+                            this.commitIndex = this.log.length - 1;
+                            this.debugLog("Conflicting entry/ies found and removed from log. Log length %d -> %d.", newEntryIndex, this.log.length);
+                        }
                         this.log.push(e);
                     });
 

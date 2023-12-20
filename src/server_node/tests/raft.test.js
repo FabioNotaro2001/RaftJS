@@ -5,6 +5,7 @@ import { State } from "../enums/State.js";
 import { LogRecord, UserCreateData } from "../components/Log.js";
 import { CommandType } from '../enums/CommandType.js';
 
+/** @type {Array<RaftNode>} */
 let nodes;
 
 function createNodes() {
@@ -150,7 +151,12 @@ test('Incorrect log entries are removed', async () => {
     let followerNode = nodes.find(n => n.state == State.FOLLOWER);
     expect(followerNode).toBeDefined();
         
-    followerNode.log.push(new LogRecord(1, CommandType.NEW_USER, new UserCreateData("user", "password"), () => {}));
+    followerNode.log.push(new LogRecord(0, CommandType.NEW_USER, new UserCreateData("fake-user", "fake-password"), () => {}));
+    
+    let leaderNode = nodes.find(n => n.state == State.LEADER);
+    expect(leaderNode).toBeDefined();
+
+    leaderNode.log.push(new LogRecord(1, CommandType.NEW_USER, new UserCreateData("user", "password"), () => {}));
     
     resolvePromise = undefined;
     promise = new Promise((resolve) => {
@@ -163,5 +169,9 @@ test('Incorrect log entries are removed', async () => {
 
     await promise;  // Wait for the election of a new leader.
 
-    expect(followerNode.log.length).toBe(0);
+    let logEntry = followerNode.log.at(0);
+    expect(logEntry).toBeDefined();
+
+    expect(logEntry.logData.username).toBe("user");
+    expect(logEntry.logData.password).toBe("password");
 }, 20000);

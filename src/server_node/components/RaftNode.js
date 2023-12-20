@@ -406,9 +406,14 @@ export class RaftNode {
                     this.debugLog("Received %s message from %s with wrong prevLogIndex (%s) or prevLogTerm (%s). Expected: %s and %s .", RPCType.APPENDENTRIES, args.senderId, args.prevLogIndex, args.prevLogTerm, this.log.length - 1, this.log.at(-1)?.term);
                     break;
                 }
-
+                
                 if (this.currentLeaderId == null) {            // Leader may not be known (see in case State.LEADER)
                     this.currentLeaderId = args.senderId;
+                } else {
+                    if (this.currentLeaderId != args.senderId) {    // Invalid leader trying to act as one.
+                        this.debugLog("Received %s message from %s who is not supposed to be a leader -> ignored.", RPCType.APPENDENTRIES, args.senderId);
+                        break;
+                    }
                 }
 
                 let logLength = args.prevLogIndex + 1;

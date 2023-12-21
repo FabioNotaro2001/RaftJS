@@ -3,7 +3,7 @@
 <head>
     
     <meta charset="utf-8">
-    <title>NewBidRequest - Documentation</title>
+    <title>server_node/tests/raft.test.js - Documentation</title>
     
     
     <script src="scripts/prettify/prettify.js"></script>
@@ -37,239 +37,195 @@
 
 <div id="main">
     
-    <h1 class="page-title">NewBidRequest</h1>
+    <h1 class="page-title">server_node/tests/raft.test.js</h1>
     
 
     
 
 
 
-
-<section>
-
-<header>
     
-        <h2>
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import {expect, test, beforeEach, afterEach} from '@jest/globals';
+
+import { RaftNode } from "../components/RaftNode.js";
+import { State } from "../enums/State.js";
+import { LogRecord, UserCreateData } from "../components/Log.js";
+import { CommandType } from '../enums/CommandType.js';
+
+/** @type {Array&lt;RaftNode>} */
+let nodes;
+
+function createNodes() {
+    let nNodes = 5;
+    let ids = [];
+    let ports = new Map();
+    let nodes = [];
+
+    for(let i = 0; i &lt; nNodes; i++){
+        ids.push("Node" + (i + 1));
+        ports.set(ids[i], {port1:15000 + i * 2, port2:15000 + i * 2 + 1});
+    }
+
+    for(let i = 0; i &lt; nNodes; i++){
+        let otherIDs = ids.filter((id) => id != ids[i]);
+        let hostIdsMap = new Map();
+        for(let i = 0; i &lt; otherIDs.length; i++){
+            let id = otherIDs[i];
+            hostIdsMap.set("127.0.0." + (i + 1) + ":" + ports.get(id).port1, id);
+        }
+        nodes.push(new RaftNode(ids[i], ports.get(ids[i]).port1, ports.get(ids[i]).port2, 
+                    2000, 3000, 3000, 5000, 1000, 1000, 
+                    "127.0.0.1", "root", "password", "portale",
+                    hostIdsMap, false, true));
+    }
+
+    return nodes;
+}
+
+beforeEach(() => {
+    nodes = createNodes();
+    nodes.forEach((n) => n.start());
+});
+
+afterEach(() => {
+    nodes.forEach((n) => { if(n.started) n.stop(); });
+})
+
+test('A leader is chosen between the nodes', async () => {
+    for (const node of nodes) {
+        expect(node.log.length).toBe(0);
+    }
+
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    setTimeout(() => {
+        resolvePromise();
+    }, 10000);
+
+    await promise;  // Wait for the election of a leader.
+
+    let leaderNode = nodes.find(n => n.state == State.LEADER);
+    expect(leaderNode).toBeDefined();
+}, 15000);
+
+
+test('Nodes successfully replicate a log entry', async () => {
+    for (const node of nodes) {
+        expect(node.log.length).toBe(0);
+    }
+
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    setTimeout(() => {
+        resolvePromise();
+    }, 10000);
+
+    await promise;  // Wait for the election of a leader.
+
+    let leaderNode = nodes.find(n => n.state == State.LEADER);
+    expect(leaderNode).toBeDefined();
+
+    leaderNode.log.push(new LogRecord(leaderNode.currentTerm, CommandType.NEW_USER, new UserCreateData("user", "password"), () => {}));
+
+    resolvePromise = undefined;
+    promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    setTimeout(() => {
+        resolvePromise();
+    }, 6000);
+
+    await promise;  // Wait for log replication.
+
+    for (const node of nodes) {
+        expect(node.log.length).toBe(1);
+        expect(node.log[0].logData.username).toBe("user");
+        expect(node.log[0].logData.password).toBe("password");
+    }
+}, 20000);
+
+test('New leader election', async () => {
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    setTimeout(() => {
+        resolvePromise();
+    }, 10000);
+
+    await promise;  // Wait for the election of a leader.
+
+    let leaderNode = nodes.find(n => n.state == State.LEADER);
+    expect(leaderNode).toBeDefined();
         
-            NewBidRequest
+    leaderNode.stop();
+    
+    resolvePromise = undefined;
+    promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    setTimeout(() => {
+        resolvePromise();
+    }, 10000);
+
+    await promise;  // Wait for the election of a new leader.
+
+    leaderNode = nodes.find(n => n.state == State.LEADER);
+    expect(leaderNode).toBeDefined();
+}, 25000);
+
+test('Incorrect log entries are removed', async () => {
+    let resolvePromise;
+    let promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    setTimeout(() => {
+        resolvePromise();
+    }, 10000);
+
+    await promise;  // Wait for the election of a leader.
+
+    let followerNode = nodes.find(n => n.state == State.FOLLOWER);
+    expect(followerNode).toBeDefined();
         
-        </h2>
-        
+    followerNode.log.push(new LogRecord(0, CommandType.NEW_USER, new UserCreateData("fake-user", "fake-password"), () => {}));
     
-</header>
+    let leaderNode = nodes.find(n => n.state == State.LEADER);
+    expect(leaderNode).toBeDefined();
 
-<article>
+    leaderNode.log.push(new LogRecord(1, CommandType.NEW_USER, new UserCreateData("user", "password"), () => {}));
     
-        <div class="container-overview">
-        
-            
-
-    
-
-    <h4 class="name" id="NewBidRequest"><span class="type-signature"></span>new NewBidRequest<span class="signature">(username, auctionId, bidValue)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-
-<dl class="details">
-    
-    <dt class="tag-description">Description:</dt>
-    <dd class="tag-description"><ul class="dummy"><li><p>Represents a request to place a new bid in an auction.</p></li></ul></dd>
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="server_node_components_ClientRequestTypes.js.html">server_node/components/ClientRequestTypes.js</a>, <a href="server_node_components_ClientRequestTypes.js.html#line22">line 22</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <h5 class="h5-parameters">Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>username</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">String</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The name of the user making the bid.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>auctionId</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The id of the auction the bid is being made on.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>bidValue</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The value of the bid.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-        </div>
-    
-
-    
-
-    
-
-    
-    
-    
-
-     
-
-    
-
-    
-
-    
-
-    
-
-    
-</article>
-
-</section>
+    resolvePromise = undefined;
+    promise = new Promise((resolve) => {
+        resolvePromise = resolve;
+    });
+
+    setTimeout(() => {
+        resolvePromise();
+    }, 5000);
+
+    await promise;  // Wait for the election of a new leader.
+
+    let logEntry = followerNode.log.at(0);
+    expect(logEntry).toBeDefined();
+
+    expect(logEntry.logData.username).toBe("user");
+    expect(logEntry.logData.password).toBe("password");
+}, 20000);</code></pre>
+        </article>
+    </section>
 
 
 

@@ -364,6 +364,8 @@ export class RaftNode {
      * @param {AppendEntriesParameters} args The parameters of the AppendEntries RPC.
      */
     onAppendEntriesMessage(args) {
+        this.debugLog("Received %s message: %s", RPCType.APPENDENTRIES, JSON.stringify(args));
+
         let senderSocket = this.sockets.get(args.senderId);
         if (args.term > this.currentTerm) {     // Contact from a more recent leader.
             switch (this.state) {
@@ -409,7 +411,7 @@ export class RaftNode {
                 
                 if (this.currentLeaderId == null) {            // Leader may not be known (see in case State.LEADER)
                     this.currentLeaderId = args.senderId;
-                    this.debugLog("Discovere leader: %s.", args.senderId);
+                    this.debugLog("Discovered leader: %s.", args.senderId);
                 } else {
                     if (this.currentLeaderId != args.senderId) {    // Invalid leader trying to act as one.
                         this.debugLog("Received %s message from %s who is not supposed to be a leader -> ignored.", RPCType.APPENDENTRIES, args.senderId);
@@ -421,9 +423,10 @@ export class RaftNode {
                     args.entries.forEach((e, i) => {
                         let newEntryIndex = args.prevLogIndex + i + 1;
                         if (this.log[newEntryIndex] && this.log[newEntryIndex].term !== e.term) {
+                            let prevLogLength = this.log.length;
                             this.log.length = newEntryIndex;        // Delete all records starting from the conflicting one.
                             this.commitIndex = this.log.length - 1;
-                            this.debugLog("Conflicting entry/ies found and removed from log. Log length %d -> %d.", newEntryIndex, this.log.length);
+                            this.debugLog("Conflicting entry/ies found and removed from log. Log length %d -> %d.", prevLogLength, this.log.length);
                         }
                         this.log.push(e);
                     });
@@ -509,6 +512,8 @@ export class RaftNode {
      * @param {RequestVoteParameters} args The parameters of the RequestVote RPC.
      */
     onRequestVoteMessage(args) {
+        this.debugLog("Received %s message: %s", RPCType.REQUESTVOTE, JSON.stringify(args));
+
         let senderSocket = this.sockets.get(args.senderId);
         if (args.term > this.currentTerm) {     // Contact from a more recent candidate.
             switch (this.state) {
@@ -536,7 +541,7 @@ export class RaftNode {
         switch (this.state) {
             case State.FOLLOWER: {
                 if (args.isResponse) {
-                    this.debugLog("Received \"%s\" request from %s -> ignore.", RPCType.REQUESTVOTE, args.senderId);
+                    this.debugLog("Received \"%s\" response from %s -> ignore.", RPCType.REQUESTVOTE, args.senderId);
                     break;
                 }
 

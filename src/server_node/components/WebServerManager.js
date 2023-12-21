@@ -34,8 +34,10 @@ export class WebServerManager {
         this.webServerServer = new Server();
 
         this.webServerServer.on("connection", socket => {    // Handle connections to this node.
-            // Register event listeners for each command type
-            Object.values(CommandType).forEach((commandType) => {
+            try {
+
+                // Register event listeners for each command type
+                Object.values(CommandType).forEach((commandType) => {
                 socket.on(commandType, (args, callback) => this.onRequest(commandType, args, callback));
             });
 
@@ -46,6 +48,9 @@ export class WebServerManager {
                     leaderId: this.raftNode.state == State.LEADER ? null : this.raftNode.currentLeaderId
                 });
             });
+            } catch (e) {
+                this.raftNode.debugLog("Unexpected webserver error: %s", e.message);
+            }   
         });
 
         this.webServerServer.listen(this.webServerPort);

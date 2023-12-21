@@ -364,9 +364,9 @@ export class RaftNode {
      * @param {AppendEntriesParameters} args The parameters of the AppendEntries RPC.
      */
     onAppendEntriesMessage(args) {
-        this.debugLog("------------------------------------------------------------------------------");
-        this.debugLog("Received %s message: %s", RPCType.APPENDENTRIES, JSON.stringify(args));
-        this.debugLog("------------------------------------------------------------------------------");
+        this.debugLog("/-----------------------------------------------------------------------------\\");
+        this.debugLog("(%s): %s", RPCType.APPENDENTRIES, JSON.stringify(args));
+        this.debugLog("\\-----------------------------------------------------------------------------/");
 
         let senderSocket = this.sockets.get(args.senderId);
         if (args.term > this.currentTerm) {     // Contact from a more recent leader.
@@ -404,11 +404,14 @@ export class RaftNode {
                     break;
                 }
 
-                if (args.prevLogIndex >= 0 && (!this.log[args.prevLogIndex] || this.log[args.prevLogIndex].term !== args.prevLogTerm)) {
-                    this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false, this.commitIndex, this.lastApplied);
-                    this.debugLog("Received %s message from %s with wrong prevLogIndex (%s) or prevLogTerm (%s). Expected: %s and %s.", RPCType.APPENDENTRIES, args.senderId, args.prevLogIndex, args.prevLogTerm, this.log.length - 1, this.log.at(-1)?.term);
-                    this.resetLeaderTimeout();
-                    break;
+                if (args.prevLogIndex >= 0) {
+                    let logEntry = this.log.at(args.prevLogIndex);
+                    if (logEntry == null) {
+                        this.rpcManager.sendReplicationResponse(senderSocket, this.currentTerm, false, this.commitIndex, this.lastApplied);
+                        this.debugLog("Received %s message from %s with prevLogIndex (%s) that is not in the log.", RPCType.APPENDENTRIES, args.senderId, args.prevLogIndex);
+                        this.resetLeaderTimeout();
+                        break;
+                    }
                 }
                 
                 if (this.currentLeaderId == null) {            // Leader may not be known (see in case State.LEADER)
@@ -520,9 +523,9 @@ export class RaftNode {
      * @param {RequestVoteParameters} args The parameters of the RequestVote RPC.
      */
     onRequestVoteMessage(args) {
-        this.debugLog("------------------------------------------------------------------------------");
-        this.debugLog("Received %s message: %s", RPCType.REQUESTVOTE, JSON.stringify(args));
-        this.debugLog("------------------------------------------------------------------------------");
+        this.debugLog("/-----------------------------------------------------------------------------\\");
+        this.debugLog("(%s): %s", RPCType.REQUESTVOTE, JSON.stringify(args));
+        this.debugLog("\\-----------------------------------------------------------------------------/");
 
         let senderSocket = this.sockets.get(args.senderId);
         if (args.term > this.currentTerm) {     // Contact from a more recent candidate.
@@ -772,7 +775,7 @@ export class RaftNode {
      */
     debugLog(message, ...optionalParams) {
         if (this.debug) {
-            console.log("[" + this.id + " (" + this.state + ")]: " + message, ...optionalParams);
+            console.log("(" + new Date().toLocaleString().slice(-8) + ") [" + this.id + " (" + this.state + ")]: " + message, ...optionalParams);
         }
     }
 }

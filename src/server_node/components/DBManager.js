@@ -68,7 +68,7 @@ export class DBManager {
      * @returns {Promise<void>} A promise that resolves when the connection is established.
      */
     async connect() {
-        this.connectToDb();
+        await this.connectToDb();
 
         if (this.firstConnection) {
             // Delete all tables contents if this is the first connection. We assume they already exist.

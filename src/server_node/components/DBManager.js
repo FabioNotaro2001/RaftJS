@@ -52,17 +52,23 @@ export class DBManager {
         this.firstConnection = true;
     }
 
+    async connectToDb() {
+        this.connection = await mysql.createConnection({
+            host: this.host,
+            user: this.user,
+            password: this.password,
+            database: this.database,
+            idleTimeout: 180000,
+            enableKeepAlive: true
+        });
+    }
+
     /**
      * Establishes a connection to the database.
      * @returns {Promise<void>} A promise that resolves when the connection is established.
      */
     async connect() {
-        this.connection = await mysql.createConnection({
-            host: this.host,
-            user: this.user,
-            password: this.password,
-            database: this.database
-        });
+        this.connectToDb();
 
         if (this.firstConnection) {
             // Delete all tables contents if this is the first connection. We assume they already exist.
@@ -83,6 +89,18 @@ export class DBManager {
                 return;
             }
             console.log('Connected to MySQL database!');
+        });
+
+        let manager = this;
+
+        this.connection.on('error', async function (err) {
+            console.error('Database error', err);
+            if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+                manager.connection.destroy();
+                await manager.connectToDb();
+            } else {
+                throw err;
+            }
         });
     }
 
@@ -122,6 +140,7 @@ export class DBManager {
 
             return results.affectedRows;
         } catch (err) {
+            console.error(err);
             return null;
         }
     }
@@ -159,6 +178,7 @@ export class DBManager {
             }
             return StatusResults.failure('Auction closed.');
         } catch (err) {
+            console.error(err);
             return StatusResults.failure('Failed to add bid.');
         }
     }
@@ -169,22 +189,27 @@ export class DBManager {
      * @returns {Promise<GetAuctionInfoResponse|null>} A promise that resolves to the auction's information or null if not found.
      */
     async queryGetAuctionInfo(auctionId) {
-        let [rows, _] = await this.connection.execute(
-            `SELECT a.UserMaker AS um, a.ObjectName as obn, a.ObjectDescription as obd, a.StartingPrice AS sp, a.ClosingDate AS cd, b.Value AS hv 
+        try {
+            let [rows, _] = await this.connection.execute(
+                `SELECT a.UserMaker AS um, a.ObjectName as obn, a.ObjectDescription as obd, a.StartingPrice AS sp, a.ClosingDate AS cd, b.Value AS hv 
             FROM Auctions AS a LEFT JOIN Bids AS b
                 ON a.WinnerBid = b.Id
             WHERE a.Id = ?`,
-            [auctionId]
-        );
+                [auctionId]
+            );
 
-        if (rows.length > 0) {
-            let auct = rows[0];
-            return new GetAuctionInfoResponse(auct.um, auct.obn, auct.obd, auct.sp, auct.cd != null, auct.hv);
+            if (rows.length > 0) {
+                let auct = rows[0];
+                return new GetAuctionInfoResponse(auct.um, auct.obn, auct.obd, auct.sp, auct.cd != null, auct.hv);
+            }
+            return null;
+        } catch (err) {
+            console.error(err);
+            return null;
         }
-        return null;
     }
 
-        // ... (previous comments)
+    // ... (previous comments)
 
     /**
      * Adds a new auction to the database.
@@ -205,6 +230,7 @@ export class DBManager {
 
             return results.insertId;
         } catch (err) {
+            console.error(err);
             return null;
         }
     }
@@ -216,11 +242,16 @@ export class DBManager {
      * @returns {Promise<Boolean>} A promise that resolves to true if the login is successful, otherwise false.
      */
     async queryForLogin(username, password) {
-        const [rows, fields] = await this.connection.execute(
-            'SELECT 1 AS Success FROM Users WHERE Username = ? AND Password = ?',
-            [username, password]
-        );
-        return rows.length > 0;
+        try {
+            const [rows, fields] = await this.connection.execute(
+                'SELECT 1 AS Success FROM Users WHERE Username = ? AND Password = ?',
+                [username, password]
+            );
+            return rows.length > 0;
+        } catch (err) {
+            console.error(err);
+            return false;
+        }
     }
 
     /**
@@ -229,11 +260,16 @@ export class DBManager {
      * @returns {Promise<Boolean>} A promise that resolves to true if the user exists, otherwise false.
      */
     async queryUserExists(username) {
-        const [rows, fields] = await this.connection.execute(
-            'SELECT 1 AS Success FROM Users WHERE Username = ?',
-            [username]
-        );
-        return rows.length > 0;
+        try {
+            const [rows, fields] = await this.connection.execute(
+                'SELECT 1 AS Success FROM Users WHERE Username = ?',
+                [username]
+            );
+            return rows.length > 0;
+        } catch (err) {
+            console.error(err);
+            return false;
+        }
     }
 
     /**
@@ -255,6 +291,7 @@ export class DBManager {
             }
             return StatusResults.failure('Failed to close auction.');
         } catch (err) {
+            console.error(err);
             return StatusResults.failure('Error while updating auction.');
         }
     }
@@ -281,6 +318,7 @@ export class DBManager {
 
             return results;
         } catch (err) {
+            console.error(err);
             return null;
         }
     }
@@ -309,6 +347,7 @@ export class DBManager {
 
             return results;
         } catch (err) {
+            console.error(err);
             return null;
         }
     }
@@ -337,7 +376,7 @@ export class DBManager {
 
             return results;
         } catch (err) {
-            console.log(err);
+            console.error(err);
             return null;
         }
     }
@@ -368,7 +407,7 @@ export class DBManager {
 
             return results;
         } catch (err) {
-            console.log(err);
+            console.error(err);
             return null;
         }
     }
@@ -399,6 +438,7 @@ export class DBManager {
 
             return results;
         } catch (err) {
+            console.error(err);
             return null;
         }
     }

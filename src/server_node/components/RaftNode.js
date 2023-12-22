@@ -685,7 +685,7 @@ export class RaftNode {
             };
         } else if (thisNode.state === State.LEADER) {    // The message sent is a replication request.
             sendHeartbeat = (nodeId) => {
-                let missingEntries = thisNode.log.slice(thisNode.nextIndex.get(nodeId) + 1);
+                let missingEntries = thisNode.log.slice(thisNode.nextIndex.get(nodeId));
                 let prevLogIndex = thisNode.nextIndex.get(nodeId) - 1;
                 let prevLogTerm = prevLogIndex >= 0 ? thisNode.log[prevLogIndex].term : null;
 

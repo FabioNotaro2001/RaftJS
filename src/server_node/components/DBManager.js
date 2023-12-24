@@ -48,18 +48,19 @@ export class DBManager {
         this.database = database;
 
         // Configure database connection.
-        this.connection = null;
+        this.pool = null;
         this.firstConnection = true;
     }
 
     async connectToDb() {
-        this.connection = await mysql.createConnection({
+        this.pool = mysql.createPool({
             host: this.host,
             user: this.user,
             password: this.password,
             database: this.database,
-            idleTimeout: 180000,
-            enableKeepAlive: true
+            waitForConnections: true,
+            connectionLimit: 10,
+            queueLimit: 0
         });
     }
 
@@ -70,20 +71,8 @@ export class DBManager {
     async connect() {
         await this.connectToDb();
 
-        if (this.firstConnection) {
-            // Delete all tables contents if this is the first connection. We assume they already exist.
-            // This is caused by the fact that at the beginning the log must be empty, so the database cannot contain any data, otherwise this can lead to an inconsistency.
-            await this.connection.query("SET FOREIGN_KEY_CHECKS = 0");
-            await this.connection.query("TRUNCATE TABLE Users");
-            await this.connection.query("TRUNCATE TABLE Bids");
-            await this.connection.query("TRUNCATE TABLE Auctions");
-            await this.connection.query("SET FOREIGN_KEY_CHECKS = 1");
-
-            this.firstConnection = false;
-        }
-
         // Connect to the database,
-        await this.connection.connect((err) => {
+        await this.pool.connect((err) => {
             if (err) {
                 console.error('Database connection error:', err);
                 return;
@@ -92,8 +81,7 @@ export class DBManager {
         });
 
         let manager = this;
-
-        this.connection.on('error', async function (err) {
+        this.pool.on('error', async function (err) {
             console.error('Database error', err);
             if (err.code === 'PROTOCOL_CONNECTION_LOST') {
                 manager.connection.destroy();
@@ -102,6 +90,18 @@ export class DBManager {
                 throw err;
             }
         });
+
+        if (this.firstConnection) {
+            // Delete all tables contents if this is the first connection. We assume they already exist.
+            // This is caused by the fact that at the beginning the log must be empty, so the database cannot contain any data, otherwise this can lead to an inconsistency.
+            await this.pool.query("SET FOREIGN_KEY_CHECKS = 0");
+            await this.pool.query("TRUNCATE TABLE Users");
+            await this.pool.query("TRUNCATE TABLE Bids");
+            await this.pool.query("TRUNCATE TABLE Auctions");
+            await this.pool.query("SET FOREIGN_KEY_CHECKS = 1");
+
+            this.firstConnection = false;
+        }
     }
 
     /**
@@ -110,13 +110,14 @@ export class DBManager {
      */
     async disconnect() {
         // Close the connection.
-        await this.connection.end((err) => {
+        await this.pool.end((err) => {
             if (err) {
                 console.error('Error while closing the connection:', err);
                 return;
             }
             console.log('Closed connection to the database.');
         });
+        this.pool = null;
     }
 
     /**
@@ -133,7 +134,7 @@ export class DBManager {
     async queryAddNewUser(username, password) {
         try {
             /** @type {InsertUserResult} */
-            const [results, _] = await this.connection.execute(
+            const [results, _] = await this.pool.execute(
                 'INSERT INTO Users (Username, Password) VALUES (?, ?)',
                 [username, password]
             );
@@ -164,12 +165,12 @@ export class DBManager {
                     return StatusResults.failure('Insufficient bid price.');
                 }
 
-                const [results, _] = await this.connection.execute(
+                const [results, _] = await this.pool.execute(
                     'INSERT INTO Bids (UserMaker, AuctionId, Value, Time) VALUES (?, ?, ?, ?)',
                     [userMaker, auctionId, value, new Date().toISOString()]
                 );
                 if (results.insertId) {
-                    await this.connection.execute(
+                    await this.pool.execute(
                         'UPDATE Auctions SET WinnerBid = ? WHERE Id = ?',
                         [results.insertId, auctionId]
                     );
@@ -190,7 +191,7 @@ export class DBManager {
      */
     async queryGetAuctionInfo(auctionId) {
         try {
-            let [rows, _] = await this.connection.execute(
+            let [rows, _] = await this.pool.execute(
                 `SELECT a.UserMaker AS um, a.ObjectName as obn, a.ObjectDescription as obd, a.StartingPrice AS sp, a.ClosingDate AS cd, b.Value AS hv 
             FROM Auctions AS a LEFT JOIN Bids AS b
                 ON a.WinnerBid = b.Id
@@ -223,7 +224,7 @@ export class DBManager {
     async queryAddNewAuction(userMaker, openingDate, objectName, objectDescription, startingPrice) {
         try {
             /** @type {mysql.ResultSetHeader} */
-            const [results, _] = await this.connection.execute(
+            const [results, _] = await this.pool.execute(
                 'INSERT INTO Auctions (UserMaker, OpeningDate, ClosingDate, ObjectName, ObjectDescription, StartingPrice, WinnerBid) VALUES (?, ?, ?, ?, ?, ?, ?)',
                 [userMaker, openingDate, null, objectName, objectDescription, startingPrice, null]
             );
@@ -243,7 +244,7 @@ export class DBManager {
      */
     async queryForLogin(username, password) {
         try {
-            const [rows, fields] = await this.connection.execute(
+            const [rows, fields] = await this.pool.execute(
                 'SELECT 1 AS Success FROM Users WHERE Username = ? AND Password = ?',
                 [username, password]
             );
@@ -261,7 +262,7 @@ export class DBManager {
      */
     async queryUserExists(username) {
         try {
-            const [rows, fields] = await this.connection.execute(
+            const [rows, fields] = await this.pool.execute(
                 'SELECT 1 AS Success FROM Users WHERE Username = ?',
                 [username]
             );
@@ -281,7 +282,7 @@ export class DBManager {
     async queryCloseAuction(auctionId, closingDate) {
         try {
             /** @type {mysql.ResultSetHeader} */
-            let [results, _] = await this.connection.execute(
+            let [results, _] = await this.pool.execute(
                 'UPDATE Auctions SET ClosingDate = ? WHERE ClosingDate IS NULL AND Id = ?',
                 [closingDate, auctionId]
             );
@@ -302,7 +303,7 @@ export class DBManager {
      */
     async queryViewAllOpenAuctions() {
         try {
-            const [rows, _] = await this.connection.execute(
+            const [rows, _] = await this.pool.execute(
                 `SELECT a.Id AS id, a.ObjectName AS objName, a.ObjectDescription AS objDesc, a.OpeningDate AS date, a.StartingPrice AS sp, b.Value AS hv 
                 FROM Auctions AS a LEFT JOIN Bids AS b
                 ON a.WinnerBid = b.Id
@@ -331,7 +332,7 @@ export class DBManager {
      */
     async queryGetNewerBids(auctionId, lastBidId) {
         try {
-            const [rows, fields] = await this.connection.execute(
+            const [rows, fields] = await this.pool.execute(
                 `SELECT Id AS bidId, UserMaker AS user, Value AS val, Time AS time
                 FROM Bids
                 WHERE AuctionId = ? AND Id > ?`,
@@ -359,7 +360,7 @@ export class DBManager {
      */
     async queryViewAllAuctionsOfAUser(username) {
         try {
-            const [rows, fields] = await this.connection.execute(
+            const [rows, fields] = await this.pool.execute(
                 `SELECT a.Id AS id, a.ObjectName AS objName, a.ObjectDescription AS objDesc, a.OpeningDate AS opDate, a.ClosingDate AS clDate, a.StartingPrice AS sp, b.Value AS hv 
                 FROM Auctions AS a LEFT JOIN Bids AS b
                     ON a.WinnerBid = b.Id
@@ -388,7 +389,7 @@ export class DBManager {
      */
     async queryViewAllAuctionsParticipatedByUser(username) {
         try {
-            const [rows, fields] = await this.connection.execute(
+            const [rows, fields] = await this.pool.execute(
                 `SELECT a.Id AS id, a.ObjectName AS objName, a.ObjectDescription AS objDesc, a.OpeningDate AS date, a.StartingPrice as sp, b.Value AS hv 
                 FROM Auctions AS a LEFT JOIN Bids AS b
                     ON a.WinnerBid = b.Id
@@ -420,7 +421,7 @@ export class DBManager {
      */
     async queryViewNLatestBidsInAuction(auctionId, n) {
         try {
-            const [rows, fields] = await this.connection.execute(
+            const [rows, fields] = await this.pool.execute(
                 `SELECT Id as bidId, UserMaker as user, Value as val, Time as time
                 FROM Bids
                 WHERE AuctionId = ?

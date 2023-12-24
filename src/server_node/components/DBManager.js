@@ -71,15 +71,6 @@ export class DBManager {
     async connect() {
         await this.connectToDb();
 
-        // Connect to the database,
-        await this.pool.connect((err) => {
-            if (err) {
-                console.error('Database connection error:', err);
-                return;
-            }
-            console.log('Connected to MySQL database!');
-        });
-
         let manager = this;
         this.pool.on('error', async function (err) {
             console.error('Database error', err);

@@ -35,22 +35,21 @@ export class WebServerManager {
 
         this.webServerServer.on("connection", socket => {    // Handle connections to this node.
             try {
-
                 // Register event listeners for each command type
                 Object.values(CommandType).forEach((commandType) => {
-                socket.on(commandType, (args, callback) => this.onRequest(commandType, args, callback));
-            });
-
-            // Check if the node is the leader and respond accordingly
-            socket.on("isLeader", (callback) => {
-                callback({
-                    isLeader: this.raftNode.state == State.LEADER,
-                    leaderId: this.raftNode.state == State.LEADER ? null : this.raftNode.currentLeaderId
+                    socket.on(commandType, (args, callback) => this.onRequest(commandType, args, callback));
                 });
-            });
+
+                // Check if the node is the leader and respond accordingly
+                socket.on("isLeader", (callback) => {
+                    callback({
+                        isLeader: this.raftNode.state == State.LEADER,
+                        leaderId: this.raftNode.state == State.LEADER ? null : this.raftNode.currentLeaderId
+                    });
+                });
             } catch (e) {
                 this.raftNode.debugLog("Unexpected webserver error: %s", e.message);
-            }   
+            }
         });
 
         this.webServerServer.listen(this.webServerPort);
@@ -65,12 +64,21 @@ export class WebServerManager {
     }
 
     /**
+     * Forcibly disconnects all sockets from web server. Used when the node stops being the leader.
+     */
+    disconnect() {
+        this.webServerServer.disconnectSockets();
+    }
+
+    /**
      * Handles incoming client requests.
      * @param {String} commandType - Type of the command.
      * @param {ClientRequest} args - The arguments of the command.
      * @param {function} callback - Callback function to send the response.
      */
     async onRequest(commandType, args, callback) {
+        if (this.raftNode.state != State.LEADER)
+            return;
 
         // Process each command type
         switch (commandType) {

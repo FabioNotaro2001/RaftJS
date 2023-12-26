@@ -114,8 +114,10 @@ async function connectToRaftCluster() {
         });
 
         sock.on("disconnect", (reason) => {
-            console.log("Disconnected! (" + reason + ")");
-            connectToRaftCluster();
+            if (reason !== "io client disconnect") {
+                console.log("Disconnected! (" + reason + ")");
+                connectToRaftCluster();
+            }
         });
 
         await waiting;  // Pause until the response is returned to the socket.

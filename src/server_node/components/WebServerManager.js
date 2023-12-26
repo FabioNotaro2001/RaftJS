@@ -66,7 +66,7 @@ export class WebServerManager {
     /**
      * Forcibly disconnects all sockets from web server. Used when the node stops being the leader.
      */
-    disconnect() {
+    disconnectSockets() {
         this.webServerServer.disconnectSockets();
     }
 

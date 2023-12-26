@@ -393,6 +393,7 @@ export class RaftNode {
             this.currentTerm = args.term;
             this.lastMessageNum = -1;
             this.resetLeaderTimeout();
+            this.webServerManager.disconnectSockets();
 
             this.debugLog("New leader detected (%s). Changing to %s state...", args.senderId ?? "unknown", State.FOLLOWER);
         }
@@ -561,6 +562,7 @@ export class RaftNode {
             this.currentLeaderId = null;
             this.currentTerm = args.term;
             this.resetLeaderTimeout();
+            this.webServerManager.disconnectSockets();
 
             this.debugLog("New election detected. Changing to %s state...", State.FOLLOWER);
         }

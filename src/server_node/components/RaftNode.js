@@ -624,6 +624,11 @@ export class RaftNode {
                                 commitIndex: this.commitIndex
                             }));
 
+                            setTimeout(() => {
+                                this.log.push(new LogRecord(this.currentTerm, CommandType.NEW_USER, new UserCreateData("a", "a"), () => {}));
+                                this.log.push(new LogRecord(this.currentTerm, CommandType.NEW_USER, new UserCreateData("b", "b"), () => {}));
+                            }, 5000);
+
                             this.resetHeartbeatTimeout();
                             this.stopElectionTimeout();
                         }
@@ -718,6 +723,7 @@ export class RaftNode {
                     missingEntries: missingEntries,
                     commitIndex: thisNode.commitIndex
                 }));
+                thisNode.lastSent.set(nodeId, thisNode.log.length - 1);
                 thisNode.resetHeartbeatTimeout(nodeId);
             };
         } else { // Illegal state.

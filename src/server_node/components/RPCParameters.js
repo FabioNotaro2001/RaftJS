@@ -23,6 +23,8 @@ class RPCParameters {
 class AppendEntriesParameters extends RPCParameters {
     /**
      * Constructor for parameters related to a AppendEntries RPC.
+     * @param {String} senderId The id of the node.
+     * @param {Number} messageNum The number of the message if it's a request.
      * @param {Number} term Leader’s term.
      * @param {Boolean} isResponse True if the RPC AppendEntries related to the parameters is a response, else false if it's a request.
      * @param {Number} prevLogIndex Index of log entry immediately preceding ones.
@@ -31,8 +33,9 @@ class AppendEntriesParameters extends RPCParameters {
      * @param {Number} leaderCommit Leader’s commitIndex.
      * @param {Boolean} success True if follower contained entry matching prevLogIndex and prevLogTerm. Use only if is response = true.
      */
-    constructor(senderId, term, isResponse, prevLogIndex, prevLogTerm, entries, leaderCommit, success) {
+    constructor(senderId, messageNum, term, isResponse, prevLogIndex, prevLogTerm, entries, leaderCommit, success) {
         super(senderId, term, isResponse);
+        this.messageNum = messageNum;
         this.prevLogIndex = prevLogIndex;
         this.prevLogTerm = prevLogTerm;
         this.entries = entries;
@@ -50,8 +53,8 @@ class AppendEntriesParameters extends RPCParameters {
      * @param {Number} leaderCommit Leader’s commitIndex.
      * @returns {AppendEntriesParameters} The instantiated new AppendEntriesParameters for a request.
      */
-    static forRequest(senderId, term, prevLogIndex, prevLogTerm, entries, leaderCommit){
-        return new AppendEntriesParameters(senderId, term, false, prevLogIndex, prevLogTerm, entries, leaderCommit, undefined);
+    static forRequest(senderId, messageNum, term, prevLogIndex, prevLogTerm, entries, leaderCommit){
+        return new AppendEntriesParameters(senderId, messageNum, term, false, prevLogIndex, prevLogTerm, entries, leaderCommit, undefined);
     }
 
     /**
@@ -61,7 +64,7 @@ class AppendEntriesParameters extends RPCParameters {
      * @returns {AppendEntriesParameters} The instantiated new AppendEntriesParameters for a response.
      */
     static forResponse(senderId, term, success){
-        return new AppendEntriesParameters(senderId, term, true, undefined, undefined, undefined, undefined, success);
+        return new AppendEntriesParameters(senderId, undefined, term, true, undefined, undefined, undefined, undefined, success);
     }
 }
 

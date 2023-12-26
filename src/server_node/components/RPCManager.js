@@ -51,8 +51,8 @@ export class RPCManager {
      * @param {LogRecord[]} entries Log entries to store.
      * @param {Number} leaderCommit Leader’s commitIndex
      */
-    sendReplication(term, prevLogIndex, prevLogTerm, entries, leaderCommit) {
-        this.sendAll(RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(this.currentId, term, prevLogIndex, prevLogTerm, entries, leaderCommit));
+    sendReplication(messageNum, term, prevLogIndex, prevLogTerm, entries, leaderCommit) {
+        this.sendAll(RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(this.currentId, messageNum, term, prevLogIndex, prevLogTerm, entries, leaderCommit));
     }
 
     /**
@@ -64,8 +64,8 @@ export class RPCManager {
      * @param {LogRecord[]} entries Log entries to store.
      * @param {Number} leaderCommit Leader’s commitIndex
      */
-    sendReplicationTo(receiver, term, prevLogIndex, prevLogTerm, entries, leaderCommit) {
-        this.sendTo(receiver, RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(this.currentId, term, prevLogIndex, prevLogTerm, entries, leaderCommit));
+    sendReplicationTo(receiver, messageNum, term, prevLogIndex, prevLogTerm, entries, leaderCommit) {
+        this.sendTo(receiver, RPCType.APPENDENTRIES, AppendEntriesParameters.forRequest(this.currentId, messageNum, term, prevLogIndex, prevLogTerm, entries, leaderCommit));
     }
     
     /**

@@ -132,6 +132,10 @@ export class RaftNode {
         /** @type {RPCManager} */
         this.rpcManager = new RPCManager(this.sockets, this.id);
 
+        /** @type {Map<String, Number>} */
+        this.nodeIdToMessageNum = new Map();
+        this.lastMessageNum = -1;
+
         /** @type {Boolean} */
         this.debug = debug;
 
@@ -235,6 +239,7 @@ export class RaftNode {
 
             this.sockets.set(id, sock);
             this.socketToNodeId.set(sock.id, id);
+            this.nodeIdToMessageNum.set(id, 0);
         });
 
         this.debugLog("Node started.");
@@ -386,6 +391,7 @@ export class RaftNode {
             this.state = State.FOLLOWER;
             this.currentLeaderId = args.isResponse ? null : args.senderId;
             this.currentTerm = args.term;
+            this.lastMessageNum = -1;
             this.resetLeaderTimeout();
 
             this.debugLog("New leader detected (%s). Changing to %s state...", args.senderId ?? "unknown", State.FOLLOWER);
@@ -395,6 +401,11 @@ export class RaftNode {
             case State.FOLLOWER: {
                 if (args.isResponse) {
                     this.debugLog("Received \"%s\" response from %s -> ignored.", RPCType.APPENDENTRIES, args.senderId);
+                    break;
+                }
+
+                if (args.messageNum <= this.lastMessageNum) {
+                    this.debugLog("Received \"%s\" request with old message number -> ignored.", RPCType.APPENDENTRIES, args.senderId);
                     break;
                 }
 
@@ -423,6 +434,8 @@ export class RaftNode {
                         break;
                     }
                 }
+
+                this.lastMessageNum = args.messageNum;
 
                 if (args.entries.length > 0) {
                     args.entries.forEach((e, i) => {
@@ -467,6 +480,7 @@ export class RaftNode {
                 if (args.success) { // Leader was not rejected.
                     this.matchIndex.set(args.senderId, this.lastSent.get(args.senderId));
                     this.nextIndex.set(args.senderId, this.lastSent.get(args.senderId) + 1);
+                    this.nodeIdToMessageNum.set(args.senderId, this.nodeIdToMessageNum.get(args.senderId) + 1);
 
                     let prevLogIndex = this.nextIndex.get(args.senderId) - 1;
                     let prevLogTerm = prevLogIndex >= 0 ? this.log[prevLogIndex].term : null;
@@ -481,7 +495,7 @@ export class RaftNode {
                     // Sends missing entries to the node.
                     let missingEntries = this.log.slice(this.nextIndex.get(args.senderId));
                     if (missingEntries.length > 0) {
-                        this.rpcManager.sendReplicationTo(senderSocket, this.currentTerm, prevLogIndex, prevLogTerm, missingEntries, this.commitIndex);
+                        this.rpcManager.sendReplicationTo(senderSocket, this.nodeIdToMessageNum.get(args.senderId), this.currentTerm, prevLogIndex, prevLogTerm, missingEntries, this.commitIndex);
                         this.debugLog("Received successful \"%s\" response from %s -> sending missing entries: %s.", RPCType.APPENDENTRIES, args.senderId, JSON.stringify({
                             currentTerm: this.currentTerm,
                             prevLogIndex: prevLogIndex,
@@ -587,15 +601,20 @@ export class RaftNode {
                             this.debugLog("Majority obtained -> changing state to leader and notifying other nodes.");
                             this.state = State.LEADER;
                             
+                            this.nodeIdToMessageNum.forEach((_, id) => {
+                                this.nodeIdToMessageNum.set(id, 0);
+                            })
+
                             this.sockets.forEach((_, nodeId) => {
                                 this.matchIndex.set(nodeId, -1);
                                 this.nextIndex.set(nodeId, this.log.length);
                                 this.lastSent.set(nodeId, this.log.length - 1);
                             });
 
-                            this.rpcManager.sendReplication(this.currentTerm, this.log.length - 1, (this.log.at(-1) != null ? this.log.at(-1).term : null), [], this.commitIndex);
+                            this.rpcManager.sendReplication(0, this.currentTerm, this.log.length - 1, (this.log.at(-1) != null ? this.log.at(-1).term : null), [], this.commitIndex);
 
                             this.debugLog("Sending new heartbeat : %s", JSON.stringify({
+                                messageNum: 0, 
                                 currentTerm: this.currentTerm,
                                 prevLogIndex: this.log.length - 1,
                                 prevLogTerm: (this.log.at(-1) != null ? this.log.at(-1).term : null),
@@ -689,7 +708,7 @@ export class RaftNode {
                 let prevLogIndex = thisNode.nextIndex.get(nodeId) - 1;
                 let prevLogTerm = prevLogIndex >= 0 ? thisNode.log[prevLogIndex].term : null;
 
-                thisNode.rpcManager.sendReplicationTo(thisNode.sockets.get(nodeId), thisNode.currentTerm, prevLogIndex, prevLogTerm, missingEntries, thisNode.commitIndex);
+                thisNode.rpcManager.sendReplicationTo(thisNode.sockets.get(nodeId), this.nodeIdToMessageNum.get(nodeId), thisNode.currentTerm, prevLogIndex, prevLogTerm, missingEntries, thisNode.commitIndex);
                 thisNode.debugLog("Sending new heartbeat to node %s : %s", nodeId, JSON.stringify({
                     currentTerm: thisNode.currentTerm,
                     prevLogIndex: prevLogIndex,

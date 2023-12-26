@@ -406,7 +406,7 @@ export class RaftNode {
                 }
 
                 if (args.messageNum <= this.lastMessageNum) {
-                    this.debugLog("Received \"%s\" request with old message number -> ignored.", RPCType.APPENDENTRIES, args.senderId);
+                    this.debugLog("Received \"%s\" request with old message number (%s, expected %s) -> ignored.", RPCType.APPENDENTRIES, args.senderId, args.messageNum, this.lastMessageNum);
                     break;
                 }
 
@@ -561,6 +561,7 @@ export class RaftNode {
             this.votedFor = null;
             this.currentLeaderId = null;
             this.currentTerm = args.term;
+            this.lastMessageNum = -1;
             this.resetLeaderTimeout();
             this.webServerManager.disconnectSockets();
 
@@ -623,11 +624,6 @@ export class RaftNode {
                                 missingEntries: [],
                                 commitIndex: this.commitIndex
                             }));
-
-                            setTimeout(() => {
-                                this.log.push(new LogRecord(this.currentTerm, CommandType.NEW_USER, new UserCreateData("a", "a"), () => {}));
-                                this.log.push(new LogRecord(this.currentTerm, CommandType.NEW_USER, new UserCreateData("b", "b"), () => {}));
-                            }, 5000);
 
                             this.resetHeartbeatTimeout();
                             this.stopElectionTimeout();

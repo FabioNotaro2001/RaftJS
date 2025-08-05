@@ -1,19 +1,19 @@
 # RaftJS Auction Web App
 
 This project implements the **Raft consensus algorithm** in JavaScript and uses it as the foundation for a **distributed online auction web application**. Developed for a distributed systems course, it demonstrates how Raft can enforce strong consistency and fault tolerance in a client-server, replicated system.  
-The original project report (Dec 2023) explains goals, architecture, and implementation decisions in detail.:contentReference[oaicite:1]{index=1}
+The original project report (Dec 2023) explains goals, architecture and implementation decisions.
 
 ---
 
 ## 📘 Overview
 
-- **Consensus protocol**: Raft ensures reliable and consistent replication across a cluster of servers using leader election and log replication.:contentReference[oaicite:2]{index=2}  
-- **Web application**: Users can register, create and participate in auctions. All database operations (e.g. bids, item listing) go through the Raft cluster to maintain consistency.:contentReference[oaicite:3]{index=3}  
-- **Architecture**:  
-  - Raft nodes communicate over HTTP.  
-  - The application uses a relational database (e.g. MySQL) for auctions and users.  
-  - Frontend clients interact via browser/UI.  
-  - The system is deployable on multiple physical/differing nodes or Docker containers.:contentReference[oaicite:4]{index=4}
+- **Consensus protocol** -> Raft ensures reliable and consistent replication across a cluster of servers using leader election and log replication
+- **Web application** -> users can register, create and participate in auctions. All database operations (e.g. bids, item listing) go through the Raft cluster to maintain consistency
+- **Architecture**->
+  - Raft nodes communicate over HTTP
+  - The application uses a relational database (e.g. MySQL) for auctions and users
+  - Frontend clients interact via browser/UI
+  - The system is deployable on multiple physical/differing nodes or Docker containers.
 
 ---
 
